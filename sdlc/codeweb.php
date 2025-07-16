@@ -1,5 +1,46 @@
+<?php
+require_once 'db.php';
+session_start();
+
+$error = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $email = $_POST['email'];
+    $password = $_POST['password'];
+
+    try {
+        $stmt = $pdo->prepare("SELECT * FROM users WHERE email = ?");
+        $stmt->execute([$email]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($user && password_verify($password, $user['password'])) {
+            $_SESSION['user'] = $user;
+            header('Location: home.php');
+            exit();
+        } else {
+            $error = 'Invalid email or password';
+        }
+    } catch (PDOException $e) {
+        $error = 'Database error: ' . $e->getMessage();
+    }
+}
+
+
+
+
+
+
+
+?>
 <!DOCTYPE html>
 <html lang="en">
+<!-- Phần còn lại của file HTML -->
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,23 +51,30 @@
     <style>
         /* Custom CSS for animations and overrides */
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
-        
+
         .fade-in {
             animation: fadeIn 0.5s ease-out forwards;
         }
-        
+
         .room-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
         }
-        
+
         .hidden-section {
             display: none;
         }
-        
+
         /* Custom date picker styling */
         .date-input {
             background-image: url('data:image/svg+xml;utf8,<svg fill="%239CA3AF" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/><path d="M0 0h24v24H0z" fill="none"/></svg>');
@@ -34,32 +82,37 @@
             background-position: right 0.5rem center;
             background-size: 1.5rem;
         }
-        
+
         /* Custom scrollbar */
         ::-webkit-scrollbar {
             width: 8px;
         }
+
         ::-webkit-scrollbar-track {
             background: #f1f1f1;
         }
+
         ::-webkit-scrollbar-thumb {
             background: #888;
             border-radius: 4px;
         }
+
         ::-webkit-scrollbar-thumb:hover {
             background: #555;
         }
     </style>
 </head>
+
 <body class="bg-gray-50 font-sans flex flex-col min-h-screen">
     <!-- Header/Navigation -->
     <header class="bg-blue-600 text-white shadow-lg sticky top-0 z-50">
         <nav class="container mx-auto px-4 py-3 flex justify-between items-center">
             <div class="flex items-center space-x-2">
                 <i class="fas fa-hotel text-2xl"></i>
-                <a href="#" class="text-xl font-bold hover:text-blue-200 transition duration-200" onclick="showSection('home')">Hotel Deluxe</a>
+                <a href="#" class="text-xl font-bold hover:text-blue-200 transition duration-200"
+                    onclick="showSection('home')">Hotel Deluxe</a>
             </div>
-            
+
             <div class="hidden md:flex space-x-6">
                 <a href="#" class="hover:text-blue-200 transition duration-200" onclick="showSection('search')">
                     <i class="fas fa-search mr-1"></i> Search Rooms
@@ -97,12 +150,12 @@
                     </a>
                 </div>
             </div>
-            
+
             <button class="md:hidden focus:outline-none" onclick="toggleMobileMenu()">
                 <i class="fas fa-bars text-2xl"></i>
             </button>
         </nav>
-        
+
         <!-- Mobile Menu -->
         <div id="mobile-menu" class="hidden md:hidden bg-blue-700 absolute w-full left-0">
             <div class="container mx-auto px-4 py-2 flex flex-col space-y-3">
@@ -113,7 +166,8 @@
                     <a href="#" class="py-2 hover:text-blue-200 transition duration-200" onclick="showSection('login')">
                         <i class="fas fa-sign-in-alt mr-3"></i> Login
                     </a>
-                    <a href="#" class="py-2 hover:text-blue-200 transition duration-200" onclick="showSection('register')">
+                    <a href="#" class="py-2 hover:text-blue-200 transition duration-200"
+                        onclick="showSection('register')">
                         <i class="fas fa-user-plus mr-3"></i> Register
                     </a>
                 </div>
@@ -121,10 +175,12 @@
                     <a href="#" class="py-2 hover:text-blue-200 transition duration-200" onclick="showSection('book')">
                         <i class="fas fa-calendar-check mr-3"></i> Book Room
                     </a>
-                    <a href="#" class="py-2 hover:text-blue-200 transition duration-200" onclick="showSection('history')">
+                    <a href="#" class="py-2 hover:text-blue-200 transition duration-200"
+                        onclick="showSection('history')">
                         <i class="fas fa-history mr-3"></i> Booking History
                     </a>
-                    <a href="#" class="py-2 hover:text-blue-200 transition duration-200" onclick="showSection('profile')">
+                    <a href="#" class="py-2 hover:text-blue-200 transition duration-200"
+                        onclick="showSection('profile')">
                         <i class="fas fa-user mr-3"></i> Profile
                     </a>
                     <a href="#" class="py-2 hover:text-blue-200 transition duration-200" onclick="logout()">
@@ -137,7 +193,8 @@
                     </a>
                 </div>
                 <div id="reception-links-mobile" class="hidden flex-col space-y-3">
-                    <a href="#" class="py-2 hover:text-blue-200 transition duration-200" onclick="showSection('reception')">
+                    <a href="#" class="py-2 hover:text-blue-200 transition duration-200"
+                        onclick="showSection('reception')">
                         <i class="fas fa-concierge-bell mr-3"></i> Reception Panel
                     </a>
                 </div>
@@ -151,49 +208,58 @@
         <section id="home-section" class="hidden-section">
             <!-- Banner Featured Rooms Carousel -->
             <div id="featured-banner" class="relative h-72 md:h-96 rounded-xl overflow-hidden mb-8 shadow-lg">
-                <img id="banner-image" src="" alt="Featured Room" class="w-full h-full object-cover transition-all duration-500">
+                <img id="banner-image" src="" alt="Featured Room"
+                    class="w-full h-full object-cover transition-all duration-500">
                 <div class="absolute inset-0 bg-gradient-to-r from-blue-900/70 to-transparent"></div>
                 <div class="absolute left-0 top-0 h-full flex flex-col justify-center px-8 z-10">
                     <h2 id="banner-room-name" class="text-3xl md:text-4xl font-bold text-white mb-2"></h2>
-                    <div id="banner-room-type" class="inline-block bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium mb-2"></div>
+                    <div id="banner-room-type"
+                        class="inline-block bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium mb-2">
+                    </div>
                     <div id="banner-room-desc" class="text-white text-lg mb-4 max-w-xl"></div>
-                    <button id="banner-view-btn" class="bg-white text-blue-600 hover:bg-blue-700 hover:text-white px-6 py-2 rounded-lg font-semibold transition duration-200 w-max">
+                    <button id="banner-view-btn"
+                        class="bg-white text-blue-600 hover:bg-blue-700 hover:text-white px-6 py-2 rounded-lg font-semibold transition duration-200 w-max">
                         View Details <i class="fas fa-arrow-right ml-2"></i>
                     </button>
                 </div>
                 <!-- Carousel controls -->
-                <button id="banner-prev" class="absolute left-4 top-1/2 -translate-y-1/2 bg-white/70 hover:bg-white text-blue-600 rounded-full p-2 shadow z-20">
+                <button id="banner-prev"
+                    class="absolute left-4 top-1/2 -translate-y-1/2 bg-white/70 hover:bg-white text-blue-600 rounded-full p-2 shadow z-20">
                     <i class="fas fa-chevron-left"></i>
                 </button>
-                <button id="banner-next" class="absolute right-4 top-1/2 -translate-y-1/2 bg-white/70 hover:bg-white text-blue-600 rounded-full p-2 shadow z-20">
+                <button id="banner-next"
+                    class="absolute right-4 top-1/2 -translate-y-1/2 bg-white/70 hover:bg-white text-blue-600 rounded-full p-2 shadow z-20">
                     <i class="fas fa-chevron-right"></i>
                 </button>
             </div>
-            
+
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
                 <div class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition duration-200">
                     <div class="text-blue-600 mb-4">
                         <i class="fas fa-wifi text-3xl"></i>
                     </div>
                     <h3 class="text-xl font-semibold mb-2">High-speed WiFi</h3>
-                    <p class="text-gray-600">Stay connected with complimentary high-speed internet access throughout the hotel.</p>
+                    <p class="text-gray-600">Stay connected with complimentary high-speed internet access throughout the
+                        hotel.</p>
                 </div>
                 <div class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition duration-200">
                     <div class="text-blue-600 mb-4">
                         <i class="fas fa-utensils text-3xl"></i>
                     </div>
                     <h3 class="text-xl font-semibold mb-2">Gourmet Dining</h3>
-                    <p class="text-gray-600">Enjoy world-class dining experiences with our award-winning restaurants.</p>
+                    <p class="text-gray-600">Enjoy world-class dining experiences with our award-winning restaurants.
+                    </p>
                 </div>
                 <div class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition duration-200">
                     <div class="text-blue-600 mb-4">
                         <i class="fas fa-spa text-3xl"></i>
                     </div>
                     <h3 class="text-xl font-semibold mb-2">Spa & Wellness</h3>
-                    <p class="text-gray-600">Relax and rejuvenate with our luxury spa treatments and wellness programs.</p>
+                    <p class="text-gray-600">Relax and rejuvenate with our luxury spa treatments and wellness programs.
+                    </p>
                 </div>
             </div>
-            
+
             <div class="bg-white rounded-xl p-6 shadow-md">
                 <h2 class="text-2xl font-bold mb-6 text-gray-800">Featured Rooms</h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -202,28 +268,40 @@
             </div>
         </section>
 
+
+
+
+
         <!-- Login Section -->
         <section id="login-section" class="hidden-section">
             <div class="max-w-md mx-auto bg-white rounded-xl shadow-md overflow-hidden p-8 fade-in">
                 <h2 class="text-2xl font-bold text-center text-gray-800 mb-6">Login to Your Account</h2>
+
                 <form id="login-form">
                     <div class="mb-4">
                         <label for="login-email" class="block text-gray-700 text-sm font-bold mb-2">Email</label>
-                        <input type="email" id="login-email" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                        <input type="email" id="login-email"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            required>
                     </div>
                     <div class="mb-6">
                         <label for="login-password" class="block text-gray-700 text-sm font-bold mb-2">Password</label>
-                        <input type="password" id="login-password" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                        <input type="password" id="login-password"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            required>
                     </div>
-                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md focus:outline-none focus:shadow-outline transition duration-200">
+                    <button type="submit"
+                        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md focus:outline-none focus:shadow-outline transition duration-200">
                         Login <i class="fas fa-sign-in-alt ml-2"></i>
                     </button>
                 </form>
                 <div class="mt-4 text-center">
-                    <p class="text-gray-600">Don't have an account? <a href="#" class="text-blue-500 hover:underline" onclick="showSection('register')">Register here</a></p>
+                    <p class="text-gray-600">Don't have an account? <a href="#" class="text-blue-500 hover:underline"
+                            onclick="showSection('register')">Register here</a></p>
                 </div>
                 <div class="mt-4 text-center">
-                    <a href="#" class="text-blue-500 hover:underline" onclick="showSection('forgot')">Forgot password?</a>
+                    <a href="#" class="text-blue-500 hover:underline" onclick="showSection('forgot')">Forgot
+                        password?</a>
                 </div>
             </div>
         </section>
@@ -235,9 +313,12 @@
                 <form id="forgot-form">
                     <div class="mb-4">
                         <label for="forgot-email" class="block text-gray-700 text-sm font-bold mb-2">Email</label>
-                        <input type="email" id="forgot-email" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                        <input type="email" id="forgot-email"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            required>
                     </div>
-                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md focus:outline-none focus:shadow-outline transition duration-200">
+                    <button type="submit"
+                        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md focus:outline-none focus:shadow-outline transition duration-200">
                         Send Reset Link <i class="fas fa-envelope ml-2"></i>
                     </button>
                 </form>
@@ -254,46 +335,66 @@
                 <form id="register-form">
                     <div class="mb-4">
                         <label for="register-name" class="block text-gray-700 text-sm font-bold mb-2">Full Name</label>
-                        <input type="text" id="register-name" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                        <input type="text" id="register-name"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            required>
                     </div>
                     <div class="mb-4">
                         <label for="register-email" class="block text-gray-700 text-sm font-bold mb-2">Email</label>
-                        <input type="email" id="register-email" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                        <input type="email" id="register-email"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            required>
                     </div>
                     <div class="mb-4">
-                        <label for="register-phone" class="block text-gray-700 text-sm font-bold mb-2">Phone Number</label>
-                        <input type="tel" id="register-phone" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                        <label for="register-phone" class="block text-gray-700 text-sm font-bold mb-2">Phone
+                            Number</label>
+                        <input type="tel" id="register-phone"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            required>
                     </div>
                     <div class="mb-4">
-                        <label for="register-password" class="block text-gray-700 text-sm font-bold mb-2">Password</label>
+                        <label for="register-password"
+                            class="block text-gray-700 text-sm font-bold mb-2">Password</label>
                         <div class="relative">
-                            <input type="password" id="register-password" class="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-                            <button type="button" class="absolute right-2 top-2 text-gray-500 hover:text-gray-700" onclick="togglePasswordVisibility('register-password')">
+                            <input type="password" id="register-password"
+                                class="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                required>
+                            <button type="button" class="absolute right-2 top-2 text-gray-500 hover:text-gray-700"
+                                onclick="togglePasswordVisibility('register-password')">
                                 <i class="fas fa-eye" id="register-password-icon"></i>
                             </button>
                         </div>
                         <div class="mt-2">
                             <div class="flex items-center space-x-2 text-xs">
                                 <div class="flex-1 bg-gray-200 rounded-full h-1">
-                                    <div class="bg-red-500 h-1 rounded-full transition-all duration-300" id="password-strength-bar" style="width: 0%"></div>
+                                    <div class="bg-red-500 h-1 rounded-full transition-all duration-300"
+                                        id="password-strength-bar" style="width: 0%"></div>
                                 </div>
                                 <span id="password-strength-text" class="text-gray-500">Weak</span>
                             </div>
                             <div class="mt-1 text-xs text-gray-500">
                                 <div id="password-requirements">
-                                    <div class="flex items-center mb-1"><i class="fas fa-circle text-gray-300 mr-1"></i> At least 8 characters</div>
-                                    <div class="flex items-center mb-1"><i class="fas fa-circle text-gray-300 mr-1"></i> One uppercase letter</div>
-                                    <div class="flex items-center mb-1"><i class="fas fa-circle text-gray-300 mr-1"></i> One lowercase letter</div>
-                                    <div class="flex items-center mb-1"><i class="fas fa-circle text-gray-300 mr-1"></i> One number</div>
+                                    <div class="flex items-center mb-1"><i class="fas fa-circle text-gray-300 mr-1"></i>
+                                        At least 8 characters</div>
+                                    <div class="flex items-center mb-1"><i class="fas fa-circle text-gray-300 mr-1"></i>
+                                        One uppercase letter</div>
+                                    <div class="flex items-center mb-1"><i class="fas fa-circle text-gray-300 mr-1"></i>
+                                        One lowercase letter</div>
+                                    <div class="flex items-center mb-1"><i class="fas fa-circle text-gray-300 mr-1"></i>
+                                        One number</div>
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div class="mb-4">
-                        <label for="register-confirm-password" class="block text-gray-700 text-sm font-bold mb-2">Confirm Password</label>
+                        <label for="register-confirm-password"
+                            class="block text-gray-700 text-sm font-bold mb-2">Confirm Password</label>
                         <div class="relative">
-                            <input type="password" id="register-confirm-password" class="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-                            <button type="button" class="absolute right-2 top-2 text-gray-500 hover:text-gray-700" onclick="togglePasswordVisibility('register-confirm-password')">
+                            <input type="password" id="register-confirm-password"
+                                class="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                required>
+                            <button type="button" class="absolute right-2 top-2 text-gray-500 hover:text-gray-700"
+                                onclick="togglePasswordVisibility('register-confirm-password')">
                                 <i class="fas fa-eye" id="register-confirm-password-icon"></i>
                             </button>
                         </div>
@@ -304,18 +405,22 @@
                     </div>
                     <div class="mb-6">
                         <label class="flex items-center">
-                            <input type="checkbox" id="register-terms" class="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500" required>
+                            <input type="checkbox" id="register-terms"
+                                class="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500" required>
                             <span class="text-sm text-gray-700">
-                                I agree to the <a href="#" class="text-blue-600 hover:underline">Terms of Service</a> and <a href="#" class="text-blue-600 hover:underline">Privacy Policy</a>
+                                I agree to the <a href="#" class="text-blue-600 hover:underline">Terms of Service</a>
+                                and <a href="#" class="text-blue-600 hover:underline">Privacy Policy</a>
                             </span>
                         </label>
                     </div>
-                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md focus:outline-none focus:shadow-outline transition duration-200">
+                    <button type="submit"
+                        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md focus:outline-none focus:shadow-outline transition duration-200">
                         Register <i class="fas fa-user-plus ml-2"></i>
                     </button>
                 </form>
                 <div class="mt-4 text-center">
-                    <p class="text-gray-600">Already have an account? <a href="#" class="text-blue-500 hover:underline" onclick="showSection('login')">Login here</a></p>
+                    <p class="text-gray-600">Already have an account? <a href="#" class="text-blue-500 hover:underline"
+                            onclick="showSection('login')">Login here</a></p>
                 </div>
             </div>
         </section>
@@ -323,20 +428,28 @@
         <!-- Search Rooms Section -->
         <section id="search-section" class="hidden-section">
             <h2 class="text-2xl font-bold mb-6 text-gray-800">Find Your Perfect Room</h2>
-            
+
             <div class="bg-white rounded-xl p-6 shadow-md mb-8 fade-in">
                 <form id="search-form" class="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div>
-                        <label for="check-in-date" class="block text-sm font-medium text-gray-700 mb-1">Check-in Date</label>
-                        <input type="date" id="check-in-date" class="date-input w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                        <label for="check-in-date" class="block text-sm font-medium text-gray-700 mb-1">Check-in
+                            Date</label>
+                        <input type="date" id="check-in-date"
+                            class="date-input w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            required>
                     </div>
                     <div>
-                        <label for="check-out-date" class="block text-sm font-medium text-gray-700 mb-1">Check-out Date</label>
-                        <input type="date" id="check-out-date" class="date-input w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                        <label for="check-out-date" class="block text-sm font-medium text-gray-700 mb-1">Check-out
+                            Date</label>
+                        <input type="date" id="check-out-date"
+                            class="date-input w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            required>
                     </div>
                     <div>
-                        <label for="guests" class="block text-sm font-medium text-gray-700 mb-1">Number of Guests</label>
-                        <select id="guests" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <label for="guests" class="block text-sm font-medium text-gray-700 mb-1">Number of
+                            Guests</label>
+                        <select id="guests"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
                             <option value="1">1 Guest</option>
                             <option value="2" selected>2 Guests</option>
                             <option value="3">3 Guests</option>
@@ -346,7 +459,8 @@
                     </div>
                     <div>
                         <label for="room-type" class="block text-sm font-medium text-gray-700 mb-1">Room Type</label>
-                        <select id="room-type" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <select id="room-type"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
                             <option value="all">All Types</option>
                             <option value="standard">Standard</option>
                             <option value="deluxe">Deluxe</option>
@@ -354,13 +468,14 @@
                         </select>
                     </div>
                     <div class="md:col-span-4 flex justify-end">
-                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md font-semibold transition duration-200">
+                        <button type="submit"
+                            class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md font-semibold transition duration-200">
                             <i class="fas fa-search mr-2"></i> Search Rooms
                         </button>
                     </div>
                 </form>
             </div>
-            
+
             <div id="search-results" class="bg-white rounded-xl p-6 shadow-md hidden">
                 <h3 class="text-xl font-semibold mb-6 text-gray-800">Available Rooms</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -375,13 +490,14 @@
                 <div id="room-details-container" class="bg-white rounded-xl shadow-md p-6 hidden">
                     <div class="flex justify-between items-start mb-4">
                         <h2 class="text-2xl font-bold text-gray-800" id="book-room-name">Room Details</h2>
-                        <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium" id="book-room-type">Type</span>
+                        <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium"
+                            id="book-room-type">Type</span>
                     </div>
-                    
+
                     <div class="mb-6 h-64 overflow-hidden rounded-lg">
                         <img src="" alt="Room" id="book-room-image" class="w-full h-full object-cover">
                     </div>
-                    
+
                     <div class="grid grid-cols-2 gap-4 mb-6">
                         <div class="bg-gray-50 p-3 rounded-lg">
                             <div class="text-gray-500 text-sm mb-1">Max Guests</div>
@@ -392,19 +508,20 @@
                             <div class="font-semibold" id="book-room-price">$150</div>
                         </div>
                     </div>
-                    
+
                     <div class="mb-6">
                         <h3 class="text-lg font-semibold mb-2">Amenities</h3>
                         <div class="flex flex-wrap gap-2" id="book-room-amenities">
                             <!-- Amenities will be added here -->
                         </div>
                     </div>
-                    
+
                     <div class="mb-6">
                         <h3 class="text-lg font-semibold mb-2">Description</h3>
-                        <p class="text-gray-600" id="book-room-description">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+                        <p class="text-gray-600" id="book-room-description">Lorem ipsum dolor sit amet, consectetur
+                            adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
                     </div>
-                    
+
                     <div class="bg-blue-50 p-4 rounded-lg">
                         <h3 class="text-lg font-semibold mb-2 flex items-center">
                             <i class="fas fa-calendar-alt mr-2 text-blue-600"></i> Booking Dates
@@ -429,36 +546,49 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div id="booking-form-container" class="bg-white rounded-xl shadow-md p-6 hidden">
                     <h2 class="text-2xl font-bold mb-6 text-gray-800">Complete Your Booking</h2>
                     <form id="booking-form">
                         <div class="mb-4">
-                            <label for="booking-name" class="block text-gray-700 text-sm font-bold mb-2">Full Name</label>
-                            <input type="text" id="booking-name" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                            <label for="booking-name" class="block text-gray-700 text-sm font-bold mb-2">Full
+                                Name</label>
+                            <input type="text" id="booking-name"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                required>
                         </div>
                         <div class="mb-4">
-                            <label for="booking-phone" class="block text-gray-700 text-sm font-bold mb-2">Phone Number</label>
-                            <input type="tel" id="booking-phone" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                            <label for="booking-phone" class="block text-gray-700 text-sm font-bold mb-2">Phone
+                                Number</label>
+                            <input type="tel" id="booking-phone"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                required>
                         </div>
                         <div class="mb-4">
                             <label for="booking-email" class="block text-gray-700 text-sm font-bold mb-2">Email</label>
-                            <input type="email" id="booking-email" value="" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required readonly>
+                            <input type="email" id="booking-email" value=""
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                required readonly>
                         </div>
                         <div class="mb-6">
-                            <label for="booking-special-requests" class="block text-gray-700 text-sm font-bold mb-2">Special Requests</label>
-                            <textarea id="booking-special-requests" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                            <label for="booking-special-requests"
+                                class="block text-gray-700 text-sm font-bold mb-2">Special Requests</label>
+                            <textarea id="booking-special-requests" rows="4"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
                         </div>
                         <div class="mb-6">
-                            <label for="booking-payment-method" class="block text-gray-700 text-sm font-bold mb-2">Payment Method</label>
-                            <select id="booking-payment-method" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required onchange="togglePaymentForm()">
+                            <label for="booking-payment-method"
+                                class="block text-gray-700 text-sm font-bold mb-2">Payment Method</label>
+                            <select id="booking-payment-method"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                required onchange="togglePaymentForm()">
                                 <option value="pay_later">Pay at Hotel</option>
                                 <option value="stripe">Credit/Debit Card (Stripe)</option>
                                 <option value="paypal">PayPal</option>
                                 <option value="bank_transfer">Bank Transfer</option>
                             </select>
                         </div>
-                        
+
                         <!-- Stripe Payment Form -->
                         <div id="stripe-payment-form" class="mb-6 hidden">
                             <div class="bg-gray-50 p-4 rounded-lg">
@@ -475,7 +605,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <!-- PayPal Payment Form -->
                         <div id="paypal-payment-form" class="mb-6 hidden">
                             <div class="bg-gray-50 p-4 rounded-lg">
@@ -491,7 +621,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <!-- Bank Transfer Form -->
                         <div id="bank-transfer-form" class="mb-6 hidden">
                             <div class="bg-gray-50 p-4 rounded-lg">
@@ -501,19 +631,30 @@
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">Bank Name</label>
-                                        <input type="text" value="Vietcombank" class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100" readonly>
+                                        <input type="text" value="Vietcombank"
+                                            class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
+                                            readonly>
                                     </div>
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Account Number</label>
-                                        <input type="text" value="1234567890" class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100" readonly>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Account
+                                            Number</label>
+                                        <input type="text" value="1234567890"
+                                            class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
+                                            readonly>
                                     </div>
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Account Holder</label>
-                                        <input type="text" value="HOTEL DELUXE COMPANY" class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100" readonly>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Account
+                                            Holder</label>
+                                        <input type="text" value="HOTEL DELUXE COMPANY"
+                                            class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
+                                            readonly>
                                     </div>
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Transfer Content</label>
-                                        <input type="text" id="bank-transfer-content" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="Your booking ID">
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Transfer
+                                            Content</label>
+                                        <input type="text" id="bank-transfer-content"
+                                            class="w-full px-3 py-2 border border-gray-300 rounded-md"
+                                            placeholder="Your booking ID">
                                     </div>
                                 </div>
                                 <div class="bg-yellow-50 border-l-4 border-yellow-400 p-3">
@@ -523,8 +664,10 @@
                                         </div>
                                         <div class="ml-3">
                                             <p class="text-sm text-yellow-700">
-                                                Please transfer the exact amount and include your booking ID in the transfer content. 
-                                                Your booking will be confirmed within 24 hours after payment verification.
+                                                Please transfer the exact amount and include your booking ID in the
+                                                transfer content.
+                                                Your booking will be confirmed within 24 hours after payment
+                                                verification.
                                             </p>
                                         </div>
                                     </div>
@@ -538,24 +681,29 @@
                                 </div>
                                 <div class="ml-3">
                                     <p class="text-sm text-yellow-700">
-                                        You will be charged only upon arrival. Free cancellation is available until 24 hours before check-in.
+                                        You will be charged only upon arrival. Free cancellation is available until 24
+                                        hours before check-in.
                                     </p>
                                 </div>
                             </div>
                         </div>
-                        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-md focus:outline-none focus:shadow-outline text-lg transition duration-200">
+                        <button type="submit"
+                            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-md focus:outline-none focus:shadow-outline text-lg transition duration-200">
                             Confirm Booking <i class="fas fa-check-circle ml-2"></i>
                         </button>
                     </form>
                 </div>
-                
-                <div id="no-room-selected" class="bg-white rounded-xl shadow-md p-10 text-center col-span-1 lg:col-span-2">
+
+                <div id="no-room-selected"
+                    class="bg-white rounded-xl shadow-md p-10 text-center col-span-1 lg:col-span-2">
                     <div class="text-blue-600 mb-4">
                         <i class="fas fa-hotel text-5xl"></i>
                     </div>
                     <h3 class="text-xl font-semibold mb-2">Start by searching for rooms</h3>
-                    <p class="text-gray-500 mb-4">You need to search for available rooms first before you can make a booking.</p>
-                    <button onclick="showSection('search')" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md font-semibold transition duration-200">
+                    <p class="text-gray-500 mb-4">You need to search for available rooms first before you can make a
+                        booking.</p>
+                    <button onclick="showSection('search')"
+                        class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md font-semibold transition duration-200">
                         <i class="fas fa-search mr-2"></i> Search Rooms
                     </button>
                 </div>
@@ -567,24 +715,39 @@
             <div class="bg-white rounded-xl shadow-md overflow-hidden fade-in">
                 <div class="p-6">
                     <h2 class="text-2xl font-bold mb-6 text-gray-800">Your Booking History</h2>
-                    
+
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200" id="booking-table">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Booking ID</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Room</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Check-in</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Check-out</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                    <th scope="col"
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Booking ID</th>
+                                    <th scope="col"
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Room</th>
+                                    <th scope="col"
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Check-in</th>
+                                    <th scope="col"
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Check-out</th>
+                                    <th scope="col"
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Status</th>
+                                    <th scope="col"
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Total</th>
+                                    <th scope="col"
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Actions</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200" id="booking-history-body">
                                 <!-- Bookings will be populated here -->
                                 <tr>
-                                    <td colspan="7" class="px-6 py-4 text-center text-gray-500">Login to view your booking history</td>
+                                    <td colspan="7" class="px-6 py-4 text-center text-gray-500">Login to view your
+                                        booking history</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -597,60 +760,79 @@
         <section id="profile-section" class="hidden-section">
             <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-md overflow-hidden p-8 fade-in">
                 <h2 class="text-2xl font-bold text-center text-gray-800 mb-8">Your Profile</h2>
-                
+
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <div class="lg:col-span-1">
                         <div class="bg-gray-100 rounded-lg p-4 text-center">
-                            <div class="w-32 h-32 mx-auto rounded-full overflow-hidden mb-4 border-4 border-white shadow-md">
-                                <img src="https://source.unsplash.com/random/300x300/?portrait" alt="Profile" class="w-full h-full object-cover">
+                            <div
+                                class="w-32 h-32 mx-auto rounded-full overflow-hidden mb-4 border-4 border-white shadow-md">
+                                <img src="https://source.unsplash.com/random/300x300/?portrait" alt="Profile"
+                                    class="w-full h-full object-cover">
                             </div>
                             <h3 class="text-xl font-semibold" id="profile-display-name">Guest User</h3>
                             <p class="text-gray-600" id="profile-display-email">guest@example.com</p>
                             <div class="mt-4">
-                                <button id="profile-upload-btn" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                                <button id="profile-upload-btn"
+                                    class="text-blue-600 hover:text-blue-800 text-sm font-medium">
                                     <i class="fas fa-camera mr-1"></i> Upload Photo
                                 </button>
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="lg:col-span-2">
                         <form id="profile-form">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                                 <div>
-                                    <label for="profile-name" class="block text-gray-700 text-sm font-bold mb-2">Full Name</label>
-                                    <input type="text" id="profile-name" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                                    <label for="profile-name" class="block text-gray-700 text-sm font-bold mb-2">Full
+                                        Name</label>
+                                    <input type="text" id="profile-name"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        required>
                                 </div>
                                 <div>
-                                    <label for="profile-phone" class="block text-gray-700 text-sm font-bold mb-2">Phone Number</label>
-                                    <input type="tel" id="profile-phone" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                                    <label for="profile-phone" class="block text-gray-700 text-sm font-bold mb-2">Phone
+                                        Number</label>
+                                    <input type="tel" id="profile-phone"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        required>
                                 </div>
                             </div>
                             <div class="mb-6">
-                                <label for="profile-email" class="block text-gray-700 text-sm font-bold mb-2">Email</label>
-                                <input type="email" id="profile-email" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" disabled>
+                                <label for="profile-email"
+                                    class="block text-gray-700 text-sm font-bold mb-2">Email</label>
+                                <input type="email" id="profile-email"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    disabled>
                             </div>
-                            
+
                             <div class="border-t border-gray-200 pt-6 mb-6">
                                 <h3 class="text-lg font-semibold mb-4">Change Password</h3>
                                 <div class="mb-4">
-                                    <label for="profile-current-password" class="block text-gray-700 text-sm font-bold mb-2">Current Password</label>
-                                    <input type="password" id="profile-current-password" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <label for="profile-current-password"
+                                        class="block text-gray-700 text-sm font-bold mb-2">Current Password</label>
+                                    <input type="password" id="profile-current-password"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
                                 </div>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                                     <div>
-                                        <label for="profile-new-password" class="block text-gray-700 text-sm font-bold mb-2">New Password</label>
-                                        <input type="password" id="profile-new-password" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        <label for="profile-new-password"
+                                            class="block text-gray-700 text-sm font-bold mb-2">New Password</label>
+                                        <input type="password" id="profile-new-password"
+                                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
                                     </div>
                                     <div>
-                                        <label for="profile-confirm-password" class="block text-gray-700 text-sm font-bold mb-2">Confirm Password</label>
-                                        <input type="password" id="profile-confirm-password" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        <label for="profile-confirm-password"
+                                            class="block text-gray-700 text-sm font-bold mb-2">Confirm Password</label>
+                                        <input type="password" id="profile-confirm-password"
+                                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div class="flex justify-end">
-                                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-md focus:outline-none focus:shadow-outline transition duration-200">
+                                <button type="submit"
+                                    class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-md focus:outline-none focus:shadow-outline transition duration-200">
                                     Save Changes <i class="fas fa-save ml-2"></i>
                                 </button>
                             </div>
@@ -671,57 +853,78 @@
                         </h3>
                         <ul class="space-y-2">
                             <li>
-                                <a href="#" class="flex items-center px-3 py-2 rounded-lg bg-gray-700" onclick="showAdminTab('users')">
+                                <a href="#" class="flex items-center px-3 py-2 rounded-lg bg-gray-700"
+                                    onclick="showAdminTab('users')">
                                     <i class="fas fa-users mr-3"></i> User Management
                                 </a>
                             </li>
                             <li>
-                                <a href="#" class="flex items-center px-3 py-2 rounded-lg hover:bg-gray-700 transition duration-200" onclick="showAdminTab('rooms')">
+                                <a href="#"
+                                    class="flex items-center px-3 py-2 rounded-lg hover:bg-gray-700 transition duration-200"
+                                    onclick="showAdminTab('rooms')">
                                     <i class="fas fa-hotel mr-3"></i> Room Management
                                 </a>
                             </li>
                             <li>
-                                <a href="#" class="flex items-center px-3 py-2 rounded-lg hover:bg-gray-700 transition duration-200" onclick="showAdminTab('bookings')">
+                                <a href="#"
+                                    class="flex items-center px-3 py-2 rounded-lg hover:bg-gray-700 transition duration-200"
+                                    onclick="showAdminTab('bookings')">
                                     <i class="fas fa-calendar-check mr-3"></i> All Bookings
                                 </a>
                             </li>
                             <li>
-                                <a href="#" class="flex items-center px-3 py-2 rounded-lg hover:bg-gray-700 transition duration-200" onclick="showAdminTab('revenue')">
+                                <a href="#"
+                                    class="flex items-center px-3 py-2 rounded-lg hover:bg-gray-700 transition duration-200"
+                                    onclick="showAdminTab('revenue')">
                                     <i class="fas fa-chart-line mr-3"></i> Revenue Reports
                                 </a>
                             </li>
                         </ul>
                     </div>
-                    
+
                     <!-- Content -->
                     <div class="lg:w-3/4 p-6">
                         <div id="admin-users-tab">
                             <h3 class="text-xl font-bold mb-4 flex items-center">
                                 <i class="fas fa-users mr-2 text-blue-600"></i> User Management
                             </h3>
-                            
+
                             <div class="mb-6 flex justify-between items-center">
                                 <div class="relative w-64">
-                                    <input type="text" placeholder="Search users..." class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <input type="text" placeholder="Search users..."
+                                        class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                                     <div class="absolute left-3 top-2.5 text-gray-400">
                                         <i class="fas fa-search"></i>
                                     </div>
                                 </div>
-                                <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg" onclick="showUserModal('add')">
+                                <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+                                    onclick="showUserModal('add')">
                                     <i class="fas fa-plus mr-1"></i> Add User
                                 </button>
                             </div>
-                            
+
                             <div class="overflow-x-auto">
                                 <table class="min-w-full divide-y divide-gray-200">
                                     <thead class="bg-gray-50">
                                         <tr>
-                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                            <th scope="col"
+                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                ID</th>
+                                            <th scope="col"
+                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Name</th>
+                                            <th scope="col"
+                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Email</th>
+                                            <th scope="col"
+                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Role</th>
+                                            <th scope="col"
+                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Status</th>
+                                            <th scope="col"
+                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody class="bg-white divide-y divide-gray-200" id="admin-user-table-body">
@@ -730,35 +933,51 @@
                                 </table>
                             </div>
                         </div>
-                        
+
                         <div id="admin-rooms-tab" class="hidden">
                             <h3 class="text-xl font-bold mb-4 flex items-center">
                                 <i class="fas fa-hotel mr-2 text-blue-600"></i> Room Management
                             </h3>
-                            
+
                             <div class="mb-6 flex justify-between items-center">
                                 <div class="relative w-64">
-                                    <input type="text" placeholder="Search rooms..." class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <input type="text" placeholder="Search rooms..."
+                                        class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                                     <div class="absolute left-3 top-2.5 text-gray-400">
                                         <i class="fas fa-search"></i>
                                     </div>
                                 </div>
-                                <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg" onclick="showRoomModal('add')">
+                                <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+                                    onclick="showRoomModal('add')">
                                     <i class="fas fa-plus mr-1"></i> Add Room
                                 </button>
                             </div>
-                            
+
                             <div class="overflow-x-auto">
                                 <table class="min-w-full divide-y divide-gray-200">
                                     <thead class="bg-gray-50">
                                         <tr>
-                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Room</th>
-                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price/Night</th>
-                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Max Guests</th>
-                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                            <th scope="col"
+                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                ID</th>
+                                            <th scope="col"
+                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Room</th>
+                                            <th scope="col"
+                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Type</th>
+                                            <th scope="col"
+                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Price/Night</th>
+                                            <th scope="col"
+                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Max Guests</th>
+                                            <th scope="col"
+                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Status</th>
+                                            <th scope="col"
+                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody class="bg-white divide-y divide-gray-200" id="admin-room-table-body">
@@ -767,17 +986,18 @@
                                 </table>
                             </div>
                         </div>
-                        
+
                         <div id="admin-bookings-tab" class="hidden">
                             <h3 class="text-xl font-bold mb-4 flex items-center">
                                 <i class="fas fa-calendar-check mr-2 text-blue-600"></i> All Bookings
                             </h3>
-                            
+
                             <div class="mb-6">
                                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">Date Range</label>
-                                        <select class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        <select
+                                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                                             <option value="all">All Time</option>
                                             <option value="today">Today</option>
                                             <option value="week">This Week</option>
@@ -787,7 +1007,8 @@
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                                        <select class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        <select
+                                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                                             <option value="all">All Status</option>
                                             <option value="confirmed">Confirmed</option>
                                             <option value="pending">Pending</option>
@@ -797,7 +1018,8 @@
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">Room Type</label>
-                                        <select class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        <select
+                                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                                             <option value="all">All Types</option>
                                             <option value="standard">Standard</option>
                                             <option value="deluxe">Deluxe</option>
@@ -807,7 +1029,8 @@
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">Search</label>
                                         <div class="relative">
-                                            <input type="text" placeholder="Search bookings..." class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                            <input type="text" placeholder="Search bookings..."
+                                                class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                                             <div class="absolute left-3 top-2.5 text-gray-400">
                                                 <i class="fas fa-search"></i>
                                             </div>
@@ -815,19 +1038,35 @@
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div class="overflow-x-auto">
                                 <table class="min-w-full divide-y divide-gray-200">
                                     <thead class="bg-gray-50">
                                         <tr>
-                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Booking ID</th>
-                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Guest</th>
-                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Room</th>
-                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Check-in</th>
-                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Check-out</th>
-                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
-                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                            <th scope="col"
+                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Booking ID</th>
+                                            <th scope="col"
+                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Guest</th>
+                                            <th scope="col"
+                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Room</th>
+                                            <th scope="col"
+                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Check-in</th>
+                                            <th scope="col"
+                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Check-out</th>
+                                            <th scope="col"
+                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Total</th>
+                                            <th scope="col"
+                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Status</th>
+                                            <th scope="col"
+                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody class="bg-white divide-y divide-gray-200" id="admin-booking-table-body">
@@ -836,17 +1075,18 @@
                                 </table>
                             </div>
                         </div>
-                        
+
                         <div id="admin-revenue-tab" class="hidden">
                             <h3 class="text-xl font-bold mb-4 flex items-center">
                                 <i class="fas fa-chart-line mr-2 text-blue-600"></i> Revenue Reports
                             </h3>
-                            
+
                             <div class="mb-6">
                                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">Period</label>
-                                        <select class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        <select
+                                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                                             <option value="today">Today</option>
                                             <option value="week">This Week</option>
                                             <option value="month" selected>This Month</option>
@@ -856,7 +1096,8 @@
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">Room Type</label>
-                                        <select class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        <select
+                                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                                             <option value="all">All Types</option>
                                             <option value="standard">Standard</option>
                                             <option value="deluxe">Deluxe</option>
@@ -865,19 +1106,21 @@
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">Export</label>
-                                        <button class="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg">
+                                        <button
+                                            class="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg">
                                             <i class="fas fa-download mr-1"></i> Export Report
                                         </button>
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">Print</label>
-                                        <button class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
+                                        <button
+                                            class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
                                             <i class="fas fa-print mr-1"></i> Print Report
                                         </button>
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <!-- Revenue Summary Cards -->
                             <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                                 <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-blue-500">
@@ -892,7 +1135,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-green-500">
                                     <div class="flex items-center">
                                         <div class="p-3 rounded-full bg-green-100 text-green-600">
@@ -905,7 +1148,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-yellow-500">
                                     <div class="flex items-center">
                                         <div class="p-3 rounded-full bg-yellow-100 text-yellow-600">
@@ -918,7 +1161,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-purple-500">
                                     <div class="flex items-center">
                                         <div class="p-3 rounded-full bg-purple-100 text-purple-600">
@@ -932,7 +1175,7 @@
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <!-- Revenue Chart -->
                             <div class="bg-white p-6 rounded-lg shadow-md mb-8">
                                 <h4 class="text-lg font-semibold mb-4">Revenue Trend</h4>
@@ -944,7 +1187,7 @@
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <!-- Top Performing Rooms -->
                             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                                 <div class="bg-white p-6 rounded-lg shadow-md">
@@ -955,25 +1198,28 @@
                                                 <p class="font-medium">Deluxe Room #301</p>
                                                 <p class="text-sm text-gray-600">Revenue: $3,240</p>
                                             </div>
-                                            <span class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">95%</span>
+                                            <span
+                                                class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">95%</span>
                                         </div>
                                         <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                                             <div>
                                                 <p class="font-medium">Executive Suite #402</p>
                                                 <p class="text-sm text-gray-600">Revenue: $2,980</p>
                                             </div>
-                                            <span class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">88%</span>
+                                            <span
+                                                class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">88%</span>
                                         </div>
                                         <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                                             <div>
                                                 <p class="font-medium">Standard Room #201</p>
                                                 <p class="text-sm text-gray-600">Revenue: $2,450</p>
                                             </div>
-                                            <span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs">82%</span>
+                                            <span
+                                                class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs">82%</span>
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 <div class="bg-white p-6 rounded-lg shadow-md">
                                     <h4 class="text-lg font-semibold mb-4">Revenue by Room Type</h4>
                                     <div class="space-y-4">
@@ -999,7 +1245,8 @@
                                             <span class="text-sm font-medium">Standard Rooms</span>
                                             <div class="flex items-center">
                                                 <div class="w-32 bg-gray-200 rounded-full h-2 mr-2">
-                                                    <div class="bg-yellow-600 h-2 rounded-full" style="width: 20%"></div>
+                                                    <div class="bg-yellow-600 h-2 rounded-full" style="width: 20%">
+                                                    </div>
                                                 </div>
                                                 <span class="text-sm text-gray-600">20%</span>
                                             </div>
@@ -1024,50 +1271,63 @@
                         </h3>
                         <ul class="space-y-2">
                             <li>
-                                <a href="#" class="flex items-center px-3 py-2 rounded-lg bg-gray-700" onclick="showReceptionTab('checkin')">
+                                <a href="#" class="flex items-center px-3 py-2 rounded-lg bg-gray-700"
+                                    onclick="showReceptionTab('checkin')">
                                     <i class="fas fa-sign-in-alt mr-3"></i> Check-in
                                 </a>
                             </li>
                             <li>
-                                <a href="#" class="flex items-center px-3 py-2 rounded-lg hover:bg-gray-600 transition duration-200" onclick="showReceptionTab('checkout')">
+                                <a href="#"
+                                    class="flex items-center px-3 py-2 rounded-lg hover:bg-gray-600 transition duration-200"
+                                    onclick="showReceptionTab('checkout')">
                                     <i class="fas fa-sign-out-alt mr-3"></i> Check-out
                                 </a>
                             </li>
                             <li>
-                                <a href="#" class="flex items-center px-3 py-2 rounded-lg hover:bg-gray-600 transition duration-200" onclick="showReceptionTab('status')">
+                                <a href="#"
+                                    class="flex items-center px-3 py-2 rounded-lg hover:bg-gray-600 transition duration-200"
+                                    onclick="showReceptionTab('status')">
                                     <i class="fas fa-bed mr-3"></i> Room Status
                                 </a>
                             </li>
                             <li>
-                                <a href="#" class="flex items-center px-3 py-2 rounded-lg hover:bg-gray-600 transition duration-200" onclick="showReceptionTab('requests')">
+                                <a href="#"
+                                    class="flex items-center px-3 py-2 rounded-lg hover:bg-gray-600 transition duration-200"
+                                    onclick="showReceptionTab('requests')">
                                     <i class="fas fa-bell mr-3"></i> Guest Requests
                                 </a>
                             </li>
                         </ul>
                     </div>
-                    
+
                     <!-- Content -->
                     <div class="lg:w-3/4 p-6">
                         <div id="reception-checkin-tab">
                             <h3 class="text-xl font-bold mb-4 flex items-center">
                                 <i class="fas fa-sign-in-alt mr-2 text-blue-600"></i> Guest Check-in
                             </h3>
-                            
+
                             <div class="mb-6">
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div>
-                                        <label for="checkin-booking-id" class="block text-sm font-medium text-gray-700 mb-1">Booking ID</label>
+                                        <label for="checkin-booking-id"
+                                            class="block text-sm font-medium text-gray-700 mb-1">Booking ID</label>
                                         <div class="relative">
-                                            <input type="text" id="checkin-booking-id" class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter booking ID">
+                                            <input type="text" id="checkin-booking-id"
+                                                class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                placeholder="Enter booking ID">
                                             <div class="absolute left-3 top-2.5 text-gray-400">
                                                 <i class="fas fa-search"></i>
                                             </div>
                                         </div>
                                     </div>
                                     <div>
-                                        <label for="checkin-guest-name" class="block text-sm font-medium text-gray-700 mb-1">Guest Name</label>
+                                        <label for="checkin-guest-name"
+                                            class="block text-sm font-medium text-gray-700 mb-1">Guest Name</label>
                                         <div class="relative">
-                                            <input type="text" id="checkin-guest-name" class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Search by name">
+                                            <input type="text" id="checkin-guest-name"
+                                                class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                placeholder="Search by name">
                                             <div class="absolute left-3 top-2.5 text-gray-400">
                                                 <i class="fas fa-user"></i>
                                             </div>
@@ -1075,29 +1335,48 @@
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div class="overflow-x-auto mb-6">
                                 <table class="min-w-full divide-y divide-gray-200">
                                     <thead class="bg-gray-50">
                                         <tr>
-                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Booking ID</th>
-                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Guest</th>
-                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Room</th>
-                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Check-in</th>
-                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Check-out</th>
-                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                                            <th scope="col"
+                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Booking ID</th>
+                                            <th scope="col"
+                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Guest</th>
+                                            <th scope="col"
+                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Room</th>
+                                            <th scope="col"
+                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Check-in</th>
+                                            <th scope="col"
+                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Check-out</th>
+                                            <th scope="col"
+                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Status</th>
+                                            <th scope="col"
+                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Action</th>
                                         </tr>
                                     </thead>
                                     <tbody class="bg-white divide-y divide-gray-200">
                                         <tr>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">RES-2023-001</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                RES-2023-001</td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">John Doe</td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Deluxe Room #301</td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Today, 14:00</td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">June 15, 2023</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Deluxe Room
+                                                #301</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Today, 14:00
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">June 15, 2023
+                                            </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">Pending</span>
+                                                <span
+                                                    class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">Pending</span>
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                 <button class="text-green-600 hover:text-green-900 font-medium">
@@ -1106,13 +1385,19 @@
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">RES-2023-002</td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Jane Smith</td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Suite #402</td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Today, 14:00</td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">June 18, 2023</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                RES-2023-002</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Jane Smith
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Suite #402
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Today, 14:00
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">June 18, 2023
+                                            </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">Pending</span>
+                                                <span
+                                                    class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">Pending</span>
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                 <button class="text-green-600 hover:text-green-900 font-medium">
@@ -1123,7 +1408,7 @@
                                     </tbody>
                                 </table>
                             </div>
-                            
+
                             <div class="bg-white border rounded-lg p-6 shadow-sm">
                                 <h4 class="text-lg font-semibold mb-4">Check-in Details</h4>
                                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -1153,42 +1438,51 @@
                                                 <span class="ml-2 text-sm">Payment Verified</span>
                                             </label>
                                         </div>
-                                        <button class="mt-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm">
+                                        <button
+                                            class="mt-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm">
                                             <i class="fas fa-key mr-1"></i> Issue Room Key
                                         </button>
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div class="bg-white border rounded-lg p-6 shadow-sm mt-6">
                                 <h4 class="text-lg font-semibold mb-4">Edit Guest Information</h4>
                                 <form id="reception-edit-guest-form" class="grid grid-cols-1 md:grid-cols-3 gap-6">
                                     <div>
                                         <label class="block text-gray-700 text-sm font-bold mb-2">Name</label>
-                                        <input type="text" id="reception-guest-edit-name" class="w-full px-3 py-2 border border-gray-300 rounded-md" value="John Doe">
+                                        <input type="text" id="reception-guest-edit-name"
+                                            class="w-full px-3 py-2 border border-gray-300 rounded-md" value="John Doe">
                                     </div>
                                     <div>
                                         <label class="block text-gray-700 text-sm font-bold mb-2">Email</label>
-                                        <input type="email" id="reception-guest-edit-email" class="w-full px-3 py-2 border border-gray-300 rounded-md" value="john@example.com">
+                                        <input type="email" id="reception-guest-edit-email"
+                                            class="w-full px-3 py-2 border border-gray-300 rounded-md"
+                                            value="john@example.com">
                                     </div>
                                     <div>
                                         <label class="block text-gray-700 text-sm font-bold mb-2">Phone</label>
-                                        <input type="tel" id="reception-guest-edit-phone" class="w-full px-3 py-2 border border-gray-300 rounded-md" value="+1 234 567 8900">
+                                        <input type="tel" id="reception-guest-edit-phone"
+                                            class="w-full px-3 py-2 border border-gray-300 rounded-md"
+                                            value="+1 234 567 8900">
                                     </div>
                                     <div class="md:col-span-3 flex justify-end">
-                                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md">Save Changes</button>
+                                        <button type="submit"
+                                            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md">Save
+                                            Changes</button>
                                     </div>
                                 </form>
                             </div>
                         </div>
-                        
+
                         <div id="reception-checkout-tab" class="hidden">
                             <h3 class="text-xl font-bold mb-4 flex items-center">
                                 <i class="fas fa-sign-out-alt mr-2 text-blue-600"></i> Guest Check-out
                             </h3>
-                            <p class="text-gray-700">This section would display guests ready for check-out with options to process payments and room inspection.</p>
+                            <p class="text-gray-700">This section would display guests ready for check-out with options
+                                to process payments and room inspection.</p>
                         </div>
-                        
+
                         <div id="reception-status-tab" class="hidden">
                             <h3 class="text-xl font-bold mb-4 flex items-center">
                                 <i class="fas fa-bed mr-2 text-blue-600"></i> Room Status Board
@@ -1197,7 +1491,8 @@
                                 <div class="bg-white border rounded-lg p-4 shadow-sm">
                                     <div class="flex justify-between items-center mb-2">
                                         <h4 class="font-medium text-gray-700">Total Rooms</h4>
-                                        <span class="bg-gray-100 text-gray-800 text-sm font-medium px-2.5 py-0.5 rounded">40</span>
+                                        <span
+                                            class="bg-gray-100 text-gray-800 text-sm font-medium px-2.5 py-0.5 rounded">40</span>
                                     </div>
                                     <div class="grid grid-cols-2 gap-2">
                                         <div class="bg-green-50 p-2 rounded">
@@ -1219,42 +1514,60 @@
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div class="overflow-x-auto">
                                 <table class="min-w-full divide-y divide-gray-200">
                                     <thead class="bg-gray-50">
                                         <tr>
-                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Room</th>
-                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Guest</th>
-                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Check-out</th>
-                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Housekeeping</th>
+                                            <th scope="col"
+                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Room</th>
+                                            <th scope="col"
+                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Type</th>
+                                            <th scope="col"
+                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Status</th>
+                                            <th scope="col"
+                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Guest</th>
+                                            <th scope="col"
+                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Check-out</th>
+                                            <th scope="col"
+                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Housekeeping</th>
                                         </tr>
                                     </thead>
                                     <tbody class="bg-white divide-y divide-gray-200">
                                         <tr>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">201</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                201</td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Standard</td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Available</span>
+                                                <span
+                                                    class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Available</span>
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">-</td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">-</td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                <button class="text-blue-600 hover:text-blue-900 text-xs" onclick="sendCleanupRequest('201')">
+                                                <button class="text-blue-600 hover:text-blue-900 text-xs"
+                                                    onclick="sendCleanupRequest('201')">
                                                     <i class="fas fa-broom mr-1"></i> Clean
                                                 </button>
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">301</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                301</td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Deluxe</td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">Occupied</span>
+                                                <span
+                                                    class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">Occupied</span>
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">John Doe</td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">June 15, 2023</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">June 15, 2023
+                                            </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                 <button class="text-gray-400 text-xs cursor-not-allowed" disabled>
                                                     <i class="fas fa-broom mr-1"></i> Do Not Disturb
@@ -1262,15 +1575,18 @@
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">402</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                402</td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Suite</td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Dirty</span>
+                                                <span
+                                                    class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Dirty</span>
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">-</td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">-</td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                <button class="text-blue-600 hover:text-blue-900 text-xs" onclick="sendCleanupRequest('402')">
+                                                <button class="text-blue-600 hover:text-blue-900 text-xs"
+                                                    onclick="sendCleanupRequest('402')">
                                                     <i class="fas fa-broom mr-1"></i> Clean
                                                 </button>
                                             </td>
@@ -1279,12 +1595,13 @@
                                 </table>
                             </div>
                         </div>
-                        
+
                         <div id="reception-requests-tab" class="hidden">
                             <h3 class="text-xl font-bold mb-4 flex items-center">
                                 <i class="fas fa-bell mr-2 text-blue-600"></i> Guest Requests
                             </h3>
-                            <p class="text-gray-700">This section would display guest service requests with options to assign to staff and mark as completed.</p>
+                            <p class="text-gray-700">This section would display guest service requests with options to
+                                assign to staff and mark as completed.</p>
                         </div>
                     </div>
                 </div>
@@ -1316,10 +1633,12 @@
                     <i class="fas fa-check text-green-600 text-xl"></i>
                 </div>
                 <h3 class="text-lg font-medium text-gray-900 mb-2" id="success-title">Success!</h3>
-                <div class="text-sm text-gray-500 mb-4" id="success-message">Your action was completed successfully.</div>
+                <div class="text-sm text-gray-500 mb-4" id="success-message">Your action was completed successfully.
+                </div>
             </div>
             <div class="mt-5 sm:mt-6">
-                <button type="button" onclick="hideSuccessModal()" class="inline-flex justify-center w-full rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:text-sm transition duration-200">
+                <button type="button" onclick="hideSuccessModal()"
+                    class="inline-flex justify-center w-full rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:text-sm transition duration-200">
                     Continue
                 </button>
             </div>
@@ -1360,7 +1679,8 @@
                     </select>
                 </div>
                 <div class="flex justify-end space-x-2">
-                    <button type="button" onclick="hideUserModal()" class="px-4 py-2 bg-gray-300 rounded">Cancel</button>
+                    <button type="button" onclick="hideUserModal()"
+                        class="px-4 py-2 bg-gray-300 rounded">Cancel</button>
                     <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded">Save</button>
                 </div>
             </form>
@@ -1401,7 +1721,8 @@
                 </div>
                 <div class="mb-4">
                     <label class="block text-gray-700 text-sm font-bold mb-2">Description</label>
-                    <textarea id="room-modal-description" rows="3" class="w-full px-3 py-2 border rounded-md" required></textarea>
+                    <textarea id="room-modal-description" rows="3" class="w-full px-3 py-2 border rounded-md"
+                        required></textarea>
                 </div>
                 <div class="mb-4">
                     <label class="block text-gray-700 text-sm font-bold mb-2">Amenities</label>
@@ -1441,7 +1762,8 @@
                     </select>
                 </div>
                 <div class="flex justify-end space-x-2">
-                    <button type="button" onclick="hideRoomModal()" class="px-4 py-2 bg-gray-300 rounded">Cancel</button>
+                    <button type="button" onclick="hideRoomModal()"
+                        class="px-4 py-2 bg-gray-300 rounded">Cancel</button>
                     <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded">Save</button>
                 </div>
             </form>
@@ -1489,7 +1811,7 @@
                 maxGuests: 4,
                 description: "Comfortable family room with extra beds, ideal for families traveling with children.",
                 amenities: ["WiFi", "TV", "AC", "Coffee Maker", "Extra Beds"],
-               image: "https://hips.hearstapps.com/hmg-prod/images/alexander-design-contemporary-family-room-1555953761.jpg"
+                image: "https://hips.hearstapps.com/hmg-prod/images/alexander-design-contemporary-family-room-1555953761.jpg"
             },
             {
                 id: 5,
@@ -1539,7 +1861,7 @@
 
         // Current user state (null = not logged in)
         let currentUser = null;
-        
+
         // Room selected for booking
         let selectedRoom = null;
         let selectedDates = {
@@ -1549,9 +1871,9 @@
 
         // Admin users data
         let adminUsers = [
-            {id: 1, name: 'Admin User', email: 'admin@example.com', role: 'admin', status: 'active'},
-            {id: 2, name: 'Reception Staff', email: 'reception@example.com', role: 'reception', status: 'active'},
-            {id: 3, name: 'Guest User', email: 'guest@example.com', role: 'user', status: 'active'}
+            { id: 1, name: 'Admin User', email: 'admin@example.com', role: 'admin', status: 'active' },
+            { id: 2, name: 'Reception Staff', email: 'reception@example.com', role: 'reception', status: 'active' },
+            { id: 3, name: 'Guest User', email: 'guest@example.com', role: 'user', status: 'active' }
         ];
 
         // Sample data for admin bookings
@@ -1611,31 +1933,31 @@
         ];
 
         // DOM Content Loaded
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             // Initialize the page
             showSection('home');
             displayFeaturedRooms();
-            
+
             // Set min dates for date inputs
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('check-in-date').min = today;
             document.getElementById('check-out-date').min = today;
-            
+
             // Form event listeners
             document.getElementById('login-form').addEventListener('submit', handleLogin);
             document.getElementById('register-form').addEventListener('submit', handleRegister);
-            
+
             // Real-time validation for registration form
-            document.getElementById('register-password').addEventListener('input', function() {
+            document.getElementById('register-password').addEventListener('input', function () {
                 updatePasswordStrength(this.value);
                 checkPasswordMatch();
             });
-            
-            document.getElementById('register-confirm-password').addEventListener('input', function() {
+
+            document.getElementById('register-confirm-password').addEventListener('input', function () {
                 checkPasswordMatch();
             });
-            
-            document.getElementById('register-email').addEventListener('blur', function() {
+
+            document.getElementById('register-email').addEventListener('blur', function () {
                 if (this.value && !validateEmail(this.value)) {
                     this.classList.add('border-red-500');
                     this.classList.remove('border-gray-300');
@@ -1644,8 +1966,8 @@
                     this.classList.add('border-gray-300');
                 }
             });
-            
-            document.getElementById('register-phone').addEventListener('blur', function() {
+
+            document.getElementById('register-phone').addEventListener('blur', function () {
                 if (this.value && !validatePhone(this.value)) {
                     this.classList.add('border-red-500');
                     this.classList.remove('border-gray-300');
@@ -1658,41 +1980,41 @@
             document.getElementById('booking-form').addEventListener('submit', handleBooking);
             document.getElementById('profile-form').addEventListener('submit', handleProfileUpdate);
             document.getElementById('forgot-form').addEventListener('submit', handleForgotPassword);
-            
+
             // Initialize datepicker on check-in date input
-            document.getElementById('check-in-date').addEventListener('change', function() {
+            document.getElementById('check-in-date').addEventListener('change', function () {
                 const checkInDate = this.value;
                 document.getElementById('check-out-date').min = checkInDate;
                 selectedDates.checkIn = checkInDate;
                 updateBookingSummary();
             });
-            
+
             // Initialize datepicker on check-out date input
-            document.getElementById('check-out-date').addEventListener('change', function() {
+            document.getElementById('check-out-date').addEventListener('change', function () {
                 selectedDates.checkOut = this.value;
                 updateBookingSummary();
             });
-            
+
             // Check if there's a stored user
             const storedUser = localStorage.getItem('hotelBookingUser');
             if (storedUser) {
                 currentUser = JSON.parse(storedUser);
                 updateUIForUser();
             }
-            
-            if(document.getElementById('reception-edit-guest-form')) {
-                document.getElementById('reception-edit-guest-form').addEventListener('submit', function(e) {
+
+            if (document.getElementById('reception-edit-guest-form')) {
+                document.getElementById('reception-edit-guest-form').addEventListener('submit', function (e) {
                     e.preventDefault();
                     showSuccessModal('Guest Updated', 'Guest information has been updated (demo only).');
                 });
             }
-            
+
             // Admin user management
             renderAdminUsers();
-            document.querySelector('#admin-users-tab input[type="text"]').addEventListener('input', function() {
+            document.querySelector('#admin-users-tab input[type="text"]').addEventListener('input', function () {
                 renderAdminUsers(this.value);
             });
-            document.getElementById('user-modal-form').addEventListener('submit', function(e) {
+            document.getElementById('user-modal-form').addEventListener('submit', function (e) {
                 e.preventDefault();
                 const id = document.getElementById('user-modal-id').value;
                 const name = document.getElementById('user-modal-name').value;
@@ -1709,7 +2031,7 @@
                     }
                 } else {
                     // Add
-                    adminUsers.push({id: Date.now(), name, email, role, status, password});
+                    adminUsers.push({ id: Date.now(), name, email, role, status, password });
                 }
                 hideUserModal();
                 renderAdminUsers();
@@ -1718,10 +2040,10 @@
 
             // Admin room management
             renderAdminRooms();
-            document.querySelector('#admin-rooms-tab input[type="text"]').addEventListener('input', function() {
+            document.querySelector('#admin-rooms-tab input[type="text"]').addEventListener('input', function () {
                 renderAdminRooms(this.value);
             });
-            document.getElementById('room-modal-form').addEventListener('submit', function(e) {
+            document.getElementById('room-modal-form').addEventListener('submit', function (e) {
                 e.preventDefault();
                 const id = document.getElementById('room-modal-id').value;
                 const name = document.getElementById('room-modal-name').value;
@@ -1731,7 +2053,7 @@
                 const image = document.getElementById('room-modal-image').value;
                 const description = document.getElementById('room-modal-description').value;
                 const status = document.getElementById('room-modal-status').value;
-                
+
                 // Get selected amenities
                 const amenities = [];
                 document.querySelectorAll('#room-modal-form input[type="checkbox"]:checked').forEach(checkbox => {
@@ -1779,24 +2101,24 @@
             document.querySelectorAll('section').forEach(section => {
                 section.classList.add('hidden-section');
             });
-            
+
             // Show the requested section
             const section = document.getElementById(`${sectionId}-section`);
             if (section) {
                 section.classList.remove('hidden-section');
                 section.classList.add('fade-in');
-                
+
                 // Special case handling for the home section
                 if (sectionId === 'home') {
                     displayFeaturedRooms();
                 }
-                
+
                 // Special case for booking history
                 if (sectionId === 'history' && currentUser) {
                     displayBookingHistory();
                 }
             }
-            
+
             // Scroll to top
             window.scrollTo(0, 0);
         }
@@ -1807,7 +2129,7 @@
                 tab.classList.add('hidden');
             });
             document.getElementById(`admin-${tabId}-tab`).classList.remove('hidden');
-            
+
             // Update active tab highlight in sidebar
             document.querySelectorAll('#admin-section > div > div > div > ul > li > a').forEach(link => {
                 link.classList.remove('bg-gray-700');
@@ -1823,7 +2145,7 @@
                 tab.classList.add('hidden');
             });
             document.getElementById(`reception-${tabId}-tab`).classList.remove('hidden');
-            
+
             // Update active tab highlight in sidebar
             document.querySelectorAll('#reception-section > div > div > div > ul > li > a').forEach(link => {
                 link.classList.remove('bg-blue-600');
@@ -1843,12 +2165,12 @@
         function displayFeaturedRooms() {
             const featuredRoomsContainer = document.querySelector('#home-section .grid');
             if (!featuredRoomsContainer) return;
-            
+
             featuredRoomsContainer.innerHTML = '';
-            
+
             // Show 3 featured rooms
             const featuredRooms = [rooms[1], rooms[2], rooms[5]];
-            
+
             featuredRooms.forEach(room => {
                 const roomCard = document.createElement('div');
                 roomCard.className = 'bg-white rounded-xl overflow-hidden shadow-md room-card transition duration-200';
@@ -1868,7 +2190,7 @@
                         </div>
                     </div>
                 `;
-                
+
                 featuredRoomsContainer.appendChild(roomCard);
             });
         }
@@ -1877,19 +2199,19 @@
         function viewRoomDetails(roomId, checkInDate = null, checkOutDate = null) {
             const room = rooms.find(r => r.id === roomId);
             if (!room) return;
-            
+
             selectedRoom = room;
-            
+
             if (checkInDate) {
                 selectedDates.checkIn = checkInDate;
                 document.getElementById('check-in-date').value = checkInDate;
             }
-            
+
             if (checkOutDate) {
                 selectedDates.checkOut = checkOutDate;
                 document.getElementById('check-out-date').value = checkOutDate;
             }
-            
+
             // Update room details container
             document.getElementById('book-room-name').textContent = room.name;
             document.getElementById('book-room-type').textContent = room.type.charAt(0).toUpperCase() + room.type.slice(1);
@@ -1897,32 +2219,32 @@
             document.getElementById('book-room-guests').textContent = room.maxGuests;
             document.getElementById('book-room-price').textContent = `$${room.price}`;
             document.getElementById('book-room-description').textContent = room.description;
-            
+
             // Update amenities
             const amenitiesContainer = document.getElementById('book-room-amenities');
             amenitiesContainer.innerHTML = '';
             room.amenities.forEach(amenity => {
                 const amenityElement = document.createElement('span');
-                               amenityElement.className = 'bg-gray-100 text-gray-800 text-xs px-3 py-1 rounded-full flex items-center';
+                amenityElement.className = 'bg-gray-100 text-gray-800 text-xs px-3 py-1 rounded-full flex items-center';
                 amenityElement.innerHTML = `<i class="fas fa-check-circle text-blue-500 mr-1"></i> ${amenity}`;
                 amenitiesContainer.appendChild(amenityElement);
             });
-            
+
             // Update booking summary
             updateBookingSummary();
-            
+
             // Show the booking form
             document.getElementById('no-room-selected').classList.add('hidden');
             document.getElementById('room-details-container').classList.remove('hidden');
             document.getElementById('booking-form-container').classList.remove('hidden');
-            
+
             // Set email if user is logged in
             if (currentUser) {
                 document.getElementById('booking-email').value = currentUser.email;
                 document.getElementById('booking-name').value = currentUser.name;
                 document.getElementById('booking-phone').value = currentUser.phone;
             }
-            
+
             // Navigate to book section
             showSection('book');
         }
@@ -1930,21 +2252,21 @@
         // Update booking summary with dates and prices
         function updateBookingSummary() {
             if (!selectedRoom) return;
-            
+
             if (selectedDates.checkIn) {
                 document.getElementById('book-check-in').textContent = formatDate(selectedDates.checkIn);
             }
-            
+
             if (selectedDates.checkOut) {
                 document.getElementById('book-check-out').textContent = formatDate(selectedDates.checkOut);
             }
-            
+
             if (selectedDates.checkIn && selectedDates.checkOut) {
                 const checkIn = new Date(selectedDates.checkIn);
                 const checkOut = new Date(selectedDates.checkOut);
                 const nights = Math.ceil((checkOut - checkIn) / (1000 * 60 * 60 * 24));
                 const totalPrice = nights * selectedRoom.price;
-                
+
                 document.getElementById('book-total-nights').textContent = `${nights} night${nights !== 1 ? 's' : ''}`;
                 document.getElementById('book-total-price').textContent = `$${totalPrice}`;
             }
@@ -1957,86 +2279,62 @@
         }
 
         // Handle login form submission
-        function handleLogin(event) {
-            event.preventDefault();
-            
-            const email = document.getElementById('login-email').value;
-            const password = document.getElementById('login-password').value;
-            
-            // Simple validation
-            if (!email || !password) {
-                showErrorModal('Login Error', 'Please enter both email and password.');
-                return;
-            }
-            
-            // In a real app, this would be an API call
-            // For demo, we'll simulate a login with hardcoded credentials
-            
-            // Admin - email: admin@example.com, password: admin123
-            // Reception - email: reception@example.com, password: reception123
-            // User - email: user@example.com, password: user123
-            
-            let user = null;
-            
-            if (email === 'admin@example.com' && password === 'admin123') {
-                user = {
-                    id: 1,
-                    name: 'Admin User',
-                    email: 'admin@example.com',
-                    phone: '1234567890',
-                    role: 'admin'
-                };
-            }
-            else if (email === 'reception@example.com' && password === 'reception123') {
-                user = {
-                    id: 2,
-                    name: 'Reception Staff',
-                    email: 'reception@example.com',
-                    phone: '2345678901',
-                    role: 'reception'
-                };
-            }
-            else if (email === 'user@example.com' && password === 'user123') {
-                user = {
-                    id: 3,
-                    name: 'Guest User',
-                    email: 'user@example.com',
-                    phone: '3456789012',
-                    role: 'user'
-                };
-            }
-            // Check adminUsers (user được tạo từ admin panel)
-            if (!user) {
-                const found = adminUsers.find(u => u.email === email && u.password === password);
-                if (found) {
-                    user = {
-                        id: found.id,
-                        name: found.name,
-                        email: found.email,
-                        phone: found.phone || '',
-                        role: found.role
-                    };
-                }
-            }
-            
-            if (user) {
-                // Success
-                currentUser = user;
-                localStorage.setItem('hotelBookingUser', JSON.stringify(user));
-                updateUIForUser();
-                
-                // Reset form
-                document.getElementById('login-form').reset();
-                
-                // Show success message
-                showSuccessModal('Login Successful', 'You have successfully logged in to your account.');
-                
-                // Redirect to home
-                showSection('home');
-            } else {
-                showErrorModal('Login Failed', 'Invalid email or password. Please try again.');
-            }
+       // Handle login form submission
+function handleLogin(event) {
+    event.preventDefault();
+
+    const email = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
+
+    if (!email || !password) {
+        showErrorModal('Login Error', 'Please enter both email and password.');
+        return;
+    }
+
+    // Show loading indicator
+    const loginBtn = document.querySelector('#login-form button[type="submit"]');
+    const originalBtnText = loginBtn.innerHTML;
+    loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging in...';
+    loginBtn.disabled = true;
+
+    // Send data to server
+    fetch('login.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            email: email,
+            password: password
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Store user data
+            currentUser = data.user;
+            localStorage.setItem('hotelBookingUser', JSON.stringify(currentUser));
+            updateUIForUser();
+
+            showSuccessModal('Login Successful', 'Welcome back, ' + data.user.name + '!');
+            showSection('home');
+        } else {
+            showErrorModal('Login Error', data.message || 'Invalid email or password');
         }
+    })
+    .catch(error => {
+        showErrorModal('Login Error', 'An error occurred. Please try again.');
+        console.error('Error:', error);
+    })
+    .finally(() => {
+        // Restore button state
+        loginBtn.innerHTML = originalBtnText;
+        loginBtn.disabled = false;
+    });
+}
+
+// Add event listener for login form
+document.getElementById('login-form').addEventListener('submit', handleLogin);
 
         // Enhanced registration validation functions
         function validateEmail(email) {
@@ -2106,7 +2404,7 @@
         function togglePasswordVisibility(fieldId) {
             const field = document.getElementById(fieldId);
             const icon = document.getElementById(fieldId + '-icon');
-            
+
             if (field.type === 'password') {
                 field.type = 'text';
                 icon.className = 'fas fa-eye-slash';
@@ -2120,7 +2418,7 @@
             const password = document.getElementById('register-password').value;
             const confirmPassword = document.getElementById('register-confirm-password').value;
             const indicator = document.getElementById('password-match-indicator');
-            
+
             if (confirmPassword && password === confirmPassword) {
                 indicator.classList.remove('hidden');
             } else {
@@ -2131,22 +2429,17 @@
         // Handle registration form submission
         function handleRegister(event) {
             event.preventDefault();
-            
+
             const name = document.getElementById('register-name').value.trim();
             const email = document.getElementById('register-email').value.trim();
             const phone = document.getElementById('register-phone').value.trim();
             const password = document.getElementById('register-password').value;
             const confirmPassword = document.getElementById('register-confirm-password').value;
             const terms = document.getElementById('register-terms').checked;
-            
-            // Enhanced validation
+
+            // Validate form
             if (!name || !email || !phone || !password || !confirmPassword) {
                 showErrorModal('Registration Error', 'Please fill in all fields.');
-                return;
-            }
-
-            if (!validateName(name)) {
-                showErrorModal('Registration Error', 'Please enter a valid name (2-50 characters, letters only).');
                 return;
             }
 
@@ -2155,17 +2448,6 @@
                 return;
             }
 
-            if (!validatePhone(phone)) {
-                showErrorModal('Registration Error', 'Please enter a valid phone number.');
-                return;
-            }
-
-            const { strength } = checkPasswordStrength(password);
-            if (strength < 60) {
-                showErrorModal('Registration Error', 'Password is too weak. Please choose a stronger password.');
-                return;
-            }
-            
             if (password !== confirmPassword) {
                 showErrorModal('Registration Error', 'Passwords do not match.');
                 return;
@@ -2175,68 +2457,69 @@
                 showErrorModal('Registration Error', 'Please agree to the Terms of Service and Privacy Policy.');
                 return;
             }
-            
-            // In a real app, this would be an API call
-            // For demo, we'll simulate registration
-            
-            // Check if email is already in use
-            if (email === 'admin@example.com' || email === 'reception@example.com' || email === 'user@example.com') {
-                showErrorModal('Registration Error', 'An account with this email already exists.');
-                return;
-            }
-            
-            // "Register" the user
-            const newUser = {
-                id: Math.floor(Math.random() * 10000) + 4,
+
+            // Tạo đối tượng dữ liệu để gửi
+            const formData = {
                 name: name,
                 email: email,
                 phone: phone,
-                role: 'user',
-                createdAt: new Date().toISOString()
+                password: password // Không cần hash ở phía client
             };
-            
-            currentUser = newUser;
-            localStorage.setItem('hotelBookingUser', JSON.stringify(newUser));
-            updateUIForUser();
-            
-            // Reset form
-            document.getElementById('register-form').reset();
-            
-            // Show success message
-            showSuccessModal('Registration Successful', 'Your account has been created successfully. Welcome to Hotel Deluxe!');
-            
-            // Redirect to home
-            showSection('home');
+
+            // Gửi dữ liệu đến register.php
+            fetch('register.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData)
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showSuccessModal('Registration Successful', data.message || 'Your account has been created successfully!');
+                        // Reset form
+                        document.getElementById('register-form').reset();
+                        // Chuyển đến trang login sau 2 giây
+                        setTimeout(() => showSection('login'), 2000);
+                    } else {
+                        showErrorModal('Registration Error', data.message || 'Registration failed. Please try again.');
+                    }
+                })
+                .catch(error => {
+                    showErrorModal('Registration Error', 'An error occurred. Please try again.');
+                    console.error('Error:', error);
+                });
         }
 
         // Handle search form submission
         function handleSearch(event) {
             event.preventDefault();
-            
+
             const checkInDate = document.getElementById('check-in-date').value;
             const checkOutDate = document.getElementById('check-out-date').value;
             const guests = document.getElementById('guests').value;
             const roomType = document.getElementById('room-type').value;
-            
+
             // Validation
             if (!checkInDate || !checkOutDate) {
                 showErrorModal('Search Error', 'Please select both check-in and check-out dates.');
                 return;
             }
-            
+
             // In a real app, this would be an API call to check availability
             // For demo, we'll just filter from our sample data
-            
+
             let availableRooms = rooms.filter(room => {
                 // Filter by max guests
                 if (room.maxGuests < guests) return false;
-                
+
                 // Filter by room type if not "all"
                 if (roomType !== 'all' && room.type !== roomType) return false;
-                
+
                 return true;
             });
-            
+
             // Display results
             displaySearchResults(availableRooms, checkInDate, checkOutDate);
         }
@@ -2245,15 +2528,15 @@
         function displaySearchResults(rooms, checkInDate, checkOutDate) {
             const resultsContainer = document.querySelector('#search-results .grid');
             const searchResultsSection = document.getElementById('search-results');
-            
+
             if (!rooms.length) {
                 resultsContainer.innerHTML = '<div class="col-span-1 md:col-span-3 text-center py-10">No rooms available matching your criteria. Please try different dates or room types.</div>';
                 searchResultsSection.classList.remove('hidden');
                 return;
             }
-            
+
             resultsContainer.innerHTML = '';
-            
+
             rooms.forEach(room => {
                 const roomCard = document.createElement('div');
                 roomCard.className = 'bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg room-card transition duration-200';
@@ -2267,9 +2550,9 @@
                         <p class="text-gray-600 text-sm mt-2 line-clamp-2">${room.description}</p>
                         <div class="mt-4">
                             <div class="flex flex-wrap gap-1 mb-3">
-                                ${room.amenities.map(amenity => 
-                                    `<span class="bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded-full">${amenity}</span>`
-                                ).join('')}
+                                ${room.amenities.map(amenity =>
+                    `<span class="bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded-full">${amenity}</span>`
+                ).join('')}
                             </div>
                             <div class="flex justify-between items-center">
                                 <span class="text-lg font-bold text-blue-600">$${room.price}/night</span>
@@ -2280,48 +2563,48 @@
                         </div>
                     </div>
                 `;
-                
+
                 resultsContainer.appendChild(roomCard);
             });
-            
+
             searchResultsSection.classList.remove('hidden');
         }
 
         // Handle booking form submission
         function handleBooking(event) {
             event.preventDefault();
-            
+
             if (!currentUser) {
                 showErrorModal('Booking Error', 'You need to login to make a booking.');
                 showSection('login');
                 return;
             }
-            
+
             if (!selectedRoom) {
                 showErrorModal('Booking Error', 'Please select a room first.');
                 return;
             }
-            
+
             if (!selectedDates.checkIn || !selectedDates.checkOut) {
                 showErrorModal('Booking Error', 'Please select both check-in and check-out dates.');
                 return;
             }
-            
+
             const name = document.getElementById('booking-name').value;
             const phone = document.getElementById('booking-phone').value;
             const specialRequests = document.getElementById('booking-special-requests').value;
             const paymentMethod = document.getElementById('booking-payment-method').value;
-            
+
             // Validate
             if (!name || !phone) {
                 showErrorModal('Booking Error', 'Please fill in all required fields.');
                 return;
             }
-            
+
             // Giả lập thanh toán online
             if (paymentMethod === 'online') {
                 showSuccessModal('Payment Gateway', 'Redirecting to payment gateway... (demo only)');
-                setTimeout(function() {
+                setTimeout(function () {
                     finishBooking(name, phone, specialRequests, checkIn, checkOut, nights, totalPrice, 'paid');
                 }, 1500);
                 return;
@@ -2367,15 +2650,15 @@
                 `;
                 return;
             }
-            
+
             // Filter bookings for current user
             // In a real app, this would be an API call with user ID
             // For demo, we'll show all bookings if the user is the demo user
             const userBookings = currentUser.email === 'user@example.com' ? bookings : [];
-            
+
             const tbody = document.getElementById('booking-history-body');
             tbody.innerHTML = '';
-            
+
             if (userBookings.length === 0) {
                 tbody.innerHTML = `
                     <tr>
@@ -2384,15 +2667,15 @@
                 `;
                 return;
             }
-            
+
             userBookings.forEach(booking => {
                 const checkInDate = new Date(booking.checkIn);
                 const checkOutDate = new Date(booking.checkOut);
-                
+
                 const row = document.createElement('tr');
-                
+
                 let statusBadge = '';
-                switch(booking.status.toLowerCase()) {
+                switch (booking.status.toLowerCase()) {
                     case 'confirmed':
                         statusBadge = '<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Confirmed</span>';
                         break;
@@ -2405,7 +2688,7 @@
                     default:
                         statusBadge = '<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">N/A</span>';
                 }
-                
+
                 row.innerHTML = `
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${booking.id}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${booking.roomName}</td>
@@ -2424,7 +2707,7 @@
                         </button>
                     </td>
                 `;
-                
+
                 tbody.appendChild(row);
             });
         }
@@ -2432,7 +2715,7 @@
         // Cancel a booking
         function cancelBooking(bookingId) {
             if (!confirm('Are you sure you want to cancel this booking?')) return;
-            
+
             // In a real app, this would be an API call
             // For demo, we'll update locally
             const booking = bookings.find(b => b.id === bookingId);
@@ -2452,63 +2735,63 @@
         // Handle profile update
         function handleProfileUpdate(event) {
             event.preventDefault();
-            
+
             if (!currentUser) {
                 showErrorModal('Profile Error', 'You need to login to update your profile.');
                 showSection('login');
                 return;
             }
-            
+
             const name = document.getElementById('profile-name').value;
             const phone = document.getElementById('profile-phone').value;
             const currentPassword = document.getElementById('profile-current-password').value;
             const newPassword = document.getElementById('profile-new-password').value;
             const confirmPassword = document.getElementById('profile-confirm-password').value;
-            
+
             // Validate name and phone
             if (!name || !phone) {
                 showErrorModal('Profile Error', 'Please fill in all required fields.');
                 return;
             }
-            
+
             // If changing password, validate passwords
             if (currentPassword || newPassword || confirmPassword) {
                 if (!currentPassword || !newPassword || !confirmPassword) {
                     showErrorModal('Profile Error', 'Please fill in all password fields to change your password.');
                     return;
                 }
-                
+
                 if (newPassword !== confirmPassword) {
                     showErrorModal('Profile Error', 'New passwords do not match.');
                     return;
                 }
-                
+
                 if (newPassword.length < 6) {
                     showErrorModal('Profile Error', 'New password must be at least 6 characters long.');
                     return;
                 }
-                
+
                 // In a real app, currentPassword would be verified with the server
                 if (currentUser.email === 'user@example.com' && currentPassword !== 'user123') {
                     showErrorModal('Profile Error', 'Current password is incorrect.');
                     return;
                 }
             }
-            
+
             // Update user
             currentUser.name = name;
             currentUser.phone = phone;
-            
+
             // In a real app, this would be an API call
             localStorage.setItem('hotelBookingUser', JSON.stringify(currentUser));
-            
+
             showSuccessModal('Profile Updated', 'Your profile has been updated successfully.');
-            
+
             // Reset password fields
             document.getElementById('profile-current-password').value = '';
             document.getElementById('profile-new-password').value = '';
             document.getElementById('profile-confirm-password').value = '';
-            
+
             // Update displayed profile info
             document.getElementById('profile-display-name').textContent = name;
             document.getElementById('profile-display-email').textContent = currentUser.email;
@@ -2541,33 +2824,33 @@
             const adminLinksMobile = document.getElementById('admin-links-mobile');
             const receptionLinks = document.getElementById('reception-links');
             const receptionLinksMobile = document.getElementById('reception-links-mobile');
-            
+
             if (currentUser) {
                 // Hide auth links
                 authLinks.classList.add('hidden');
                 authLinksMobile.classList.add('hidden');
-                
+
                 // Show user links
                 userLinks.classList.remove('hidden');
                 userLinksMobile.classList.remove('hidden');
-                
+
                 // Show admin/reception links based on role
-                if (currentUser.role === 'admin') {
+                if (currentUser.role === 'Admin') {
                     adminLinks.classList.remove('hidden');
                     adminLinksMobile.classList.remove('hidden');
                 } else {
                     adminLinks.classList.add('hidden');
                     adminLinksMobile.classList.add('hidden');
                 }
-                
-                if (currentUser.role === 'reception') {
+
+                if (currentUser.role === 'Reception') {
                     receptionLinks.classList.remove('hidden');
                     receptionLinksMobile.classList.remove('hidden');
                 } else {
                     receptionLinks.classList.add('hidden');
                     receptionLinksMobile.classList.add('hidden');
                 }
-                
+
                 // Update profile info if on profile page
                 if (document.getElementById('profile-section') && !document.getElementById('profile-section').classList.contains('hidden-section')) {
                     document.getElementById('profile-name').value = currentUser.name;
@@ -2580,7 +2863,7 @@
                 // Show auth links
                 authLinks.classList.remove('hidden');
                 authLinksMobile.classList.remove('hidden');
-                
+
                 // Hide user links
                 userLinks.classList.add('hidden');
                 userLinksMobile.classList.add('hidden');
@@ -2597,11 +2880,11 @@
             localStorage.removeItem('hotelBookingUser');
             updateUIForUser();
             showSection('home');
-            
+
             // Reset selected room and dates
             selectedRoom = null;
             selectedDates = { checkIn: null, checkOut: null };
-            
+
             // Hide booking form if open
             document.getElementById('no-room-selected').classList.remove('hidden');
             document.getElementById('room-details-container').classList.add('hidden');
@@ -2615,12 +2898,12 @@
         // Toggle payment form based on selected method
         function togglePaymentForm() {
             const method = document.getElementById('booking-payment-method').value;
-            
+
             // Hide all payment forms
             document.getElementById('stripe-payment-form').classList.add('hidden');
             document.getElementById('paypal-payment-form').classList.add('hidden');
             document.getElementById('bank-transfer-form').classList.add('hidden');
-            
+
             // Show selected payment form
             if (method === 'stripe') {
                 document.getElementById('stripe-payment-form').classList.remove('hidden');
@@ -2646,10 +2929,10 @@
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${user.name}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${user.email}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${user.role==='admin'?'bg-purple-100 text-purple-800':user.role==='reception'?'bg-yellow-100 text-yellow-800':'bg-blue-100 text-blue-800'}">${user.role.charAt(0).toUpperCase()+user.role.slice(1)}</span>
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${user.role === 'admin' ? 'bg-purple-100 text-purple-800' : user.role === 'reception' ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800'}">${user.role.charAt(0).toUpperCase() + user.role.slice(1)}</span>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${user.status==='active'?'bg-green-100 text-green-800':'bg-gray-100 text-gray-800'}">${user.status.charAt(0).toUpperCase()+user.status.slice(1)}</span>
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${user.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">${user.status.charAt(0).toUpperCase() + user.status.slice(1)}</span>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         <button class="text-blue-600 hover:text-blue-900 mr-3" onclick="showUserModal('edit',${user.id})"><i class="fas fa-edit"></i></button>
@@ -2659,13 +2942,13 @@
             });
         }
 
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             // ...existing code...
             renderAdminUsers();
-            document.querySelector('#admin-users-tab input[type="text"]').addEventListener('input', function() {
+            document.querySelector('#admin-users-tab input[type="text"]').addEventListener('input', function () {
                 renderAdminUsers(this.value);
             });
-            document.getElementById('user-modal-form').addEventListener('submit', function(e) {
+            document.getElementById('user-modal-form').addEventListener('submit', function (e) {
                 e.preventDefault();
                 const id = document.getElementById('user-modal-id').value;
                 const name = document.getElementById('user-modal-name').value;
@@ -2682,7 +2965,7 @@
                     }
                 } else {
                     // Add
-                    adminUsers.push({id: Date.now(), name, email, role, status, password});
+                    adminUsers.push({ id: Date.now(), name, email, role, status, password });
                 }
                 hideUserModal();
                 renderAdminUsers();
@@ -2736,7 +3019,7 @@
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${room.id}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${room.name}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${room.type==='suite'?'bg-purple-100 text-purple-800':room.type==='deluxe'?'bg-blue-100 text-blue-800':'bg-gray-100 text-gray-800'}">${room.type.charAt(0).toUpperCase()+room.type.slice(1)}</span>
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${room.type === 'suite' ? 'bg-purple-100 text-purple-800' : room.type === 'deluxe' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}">${room.type.charAt(0).toUpperCase() + room.type.slice(1)}</span>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">$${room.price}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${room.maxGuests}</td>
@@ -2768,7 +3051,7 @@
                     document.getElementById('room-modal-guests').value = room.maxGuests;
                     document.getElementById('room-modal-image').value = room.image;
                     document.getElementById('room-modal-description').value = room.description;
-                    
+
                     // Reset checkboxes
                     document.querySelectorAll('#room-modal-form input[type="checkbox"]').forEach(checkbox => {
                         checkbox.checked = room.amenities.includes(checkbox.value);
@@ -2799,9 +3082,9 @@
             adminBookings.forEach(booking => {
                 const checkInDate = new Date(booking.checkIn);
                 const checkOutDate = new Date(booking.checkOut);
-                
+
                 let statusBadge = '';
-                switch(booking.status.toLowerCase()) {
+                switch (booking.status.toLowerCase()) {
                     case 'confirmed':
                         statusBadge = '<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Confirmed</span>';
                         break;
@@ -2814,7 +3097,7 @@
                     default:
                         statusBadge = '<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">N/A</span>';
                 }
-                
+
                 tbody.innerHTML += `
                 <tr>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${booking.id}</td>
@@ -2859,7 +3142,7 @@
             const bannerRoomType = document.getElementById('banner-room-type');
             const bannerRoomDesc = document.getElementById('banner-room-desc');
             const bannerViewBtn = document.getElementById('banner-view-btn');
-            
+
             const room = rooms[index];
             if (room) {
                 bannerImage.src = room.image;
@@ -2891,7 +3174,7 @@
             document.getElementById('banner-room-name').textContent = room.name;
             document.getElementById('banner-room-type').textContent = room.type.charAt(0).toUpperCase() + room.type.slice(1);
             document.getElementById('banner-room-desc').textContent = room.description;
-            document.getElementById('banner-view-btn').onclick = function() {
+            document.getElementById('banner-view-btn').onclick = function () {
                 viewRoomDetails(room.id);
             };
         }
@@ -2907,14 +3190,14 @@
             if (bannerInterval) clearInterval(bannerInterval);
             bannerInterval = setInterval(nextBannerRoom, 5000);
         }
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             // ...existing code...
             // Banner controls
-            document.getElementById('banner-prev').onclick = function() {
+            document.getElementById('banner-prev').onclick = function () {
                 prevBannerRoom();
                 startBannerAuto();
             };
-            document.getElementById('banner-next').onclick = function() {
+            document.getElementById('banner-next').onclick = function () {
                 nextBannerRoom();
                 startBannerAuto();
             };
@@ -2940,7 +3223,7 @@
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${checkInDate.toLocaleDateString()}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${checkOutDate.toLocaleDateString()}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">${booking.status.charAt(0).toUpperCase()+booking.status.slice(1)}</span>
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">${booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}</span>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         <button class="text-green-600 hover:text-green-900 font-medium" onclick="receptionCheckin('${booking.id}')">
@@ -3032,7 +3315,7 @@
                 <tr>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${room.id}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${room.name}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${room.type.charAt(0).toUpperCase()+room.type.slice(1)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${room.type.charAt(0).toUpperCase() + room.type.slice(1)}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${statusBadge}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">-</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">-</td>
@@ -3051,11 +3334,12 @@
         }
 
         // Khi chuyển tab lễ tân, gọi render tương ứng
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             if (document.getElementById('reception-checkin-tab')) renderReceptionCheckinList();
             if (document.getElementById('reception-checkout-tab')) renderReceptionCheckoutList();
             if (document.getElementById('reception-status-tab')) renderReceptionRoomStatus();
         });
     </script>
 </body>
+
 </html>
