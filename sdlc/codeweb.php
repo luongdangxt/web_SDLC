@@ -9,14 +9,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $password = $_POST['password'];
 
     try {
-        $stmt = $pdo->prepare("SELECT * FROM users WHERE email = ?");
+        $stmt = $pdo->prepare("SELECT u.*, r.RoleName, r.Permissions 
+                             FROM user_ u 
+                             JOIN role r ON u.Role = r.RoleID 
+                             WHERE u.Email = ?");
         $stmt->execute([$email]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if ($user && password_verify($password, $user['password'])) {
-            $_SESSION['user'] = $user;
-            header('Location: home.php');
-            exit();
+        if ($user && password_verify($password, $user['Password'])) {
+            $_SESSION['user'] = [
+                'id' => $user['UserID'],
+                'name' => $user['Fullname'],
+                'email' => $user['Email'],
+                'phone' => $user['Phonenumber'],
+                'role' => $user['RoleName'],
+                'permissions' => json_decode($user['Permissions'], true)
+            ];
+
+            // Redirect based on role
+            if ($user['RoleName'] === 'Admin') {
+                header('Location: codeweb.php?section=admin');
+                exit();
+            } elseif ($user['RoleName'] === 'Reception') {
+                header('Location: codeweb.php?section=reception');
+                exit();
+            } else {
+                header('Location: codeweb.php?section=home');
+                exit();
+            }
         } else {
             $error = 'Invalid email or password';
         }
@@ -25,15 +45,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+// Check if user is logged in
+$currentUser = $_SESSION['user'] ?? null;
 
-
-
-
-
-
+// Check if section parameter is set in URL
+$section = $_GET['section'] ?? 'home';
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
+<!-- Phần còn lại của file HTML -->
 <!-- Phần còn lại của file HTML -->
 
 
@@ -921,14 +942,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                                 Role</th>
                                             <th scope="col"
                                                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Status</th>
-                                            <th scope="col"
-                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                 Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody class="bg-white divide-y divide-gray-200" id="admin-user-table-body">
-                                        <!-- User rows will be rendered here by JS -->
+                                        <!-- User rows will be populated here by JS -->
                                     </tbody>
                                 </table>
                             </div>
@@ -1646,6 +1664,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 
     <!-- User Modal -->
+    <!-- User Modal -->
     <div id="user-modal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center hidden z-50">
         <div class="bg-white rounded-lg p-6 w-full max-w-md">
             <h3 class="text-lg font-bold mb-4" id="user-modal-title">Add User</h3>
@@ -1661,23 +1680,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
                 <div class="mb-3">
                     <label class="block text-gray-700 text-sm font-bold mb-2">Password</label>
-                    <input type="password" id="user-modal-password" class="w-full px-3 py-2 border rounded-md" required>
+                    <input type="password" id="user-modal-password" class="w-full px-3 py-2 border rounded-md">
+                    <p class="text-xs text-gray-500 mt-1">Leave empty to keep current password (when editing)</p>
                 </div>
                 <div class="mb-3">
                     <label class="block text-gray-700 text-sm font-bold mb-2">Role</label>
                     <select id="user-modal-role" class="w-full px-3 py-2 border rounded-md">
-                        <option value="admin">Admin</option>
-                        <option value="reception">Reception</option>
-                        <option value="user">Customer</option>
+                        <option value="Admin">Admin</option>
+                        <option value="Reception">Reception</option>
+                        <option value="User" selected>User</option>
                     </select>
                 </div>
-                <div class="mb-3">
-                    <label class="block text-gray-700 text-sm font-bold mb-2">Status</label>
-                    <select id="user-modal-status" class="w-full px-3 py-2 border rounded-md">
-                        <option value="active">Active</option>
-                        <option value="inactive">Inactive</option>
-                    </select>
-                </div>
+
                 <div class="flex justify-end space-x-2">
                     <button type="button" onclick="hideUserModal()"
                         class="px-4 py-2 bg-gray-300 rounded">Cancel</button>
@@ -1934,8 +1948,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // DOM Content Loaded
         document.addEventListener('DOMContentLoaded', function () {
-            // Initialize the page
-            showSection('home');
+            // Kiểm tra tham số section từ URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const sectionParam = urlParams.get('section');
+
+            if (sectionParam) {
+                showSection(sectionParam);
+            } else {
+                // Mặc định hiển thị trang home
+                showSection('home');
+            }
+
             displayFeaturedRooms();
 
             // Set min dates for date inputs
@@ -2108,6 +2131,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 section.classList.remove('hidden-section');
                 section.classList.add('fade-in');
 
+                // Special case handling for admin/reception sections
+                if (sectionId === 'admin') {
+                    showAdminTab('users'); // Mặc định hiển thị tab Users
+                } else if (sectionId === 'reception') {
+                    showReceptionTab('checkin'); // Mặc định hiển thị tab Check-in
+                }
+
                 // Special case handling for the home section
                 if (sectionId === 'home') {
                     displayFeaturedRooms();
@@ -2137,6 +2167,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             });
             event.currentTarget.classList.remove('hover:bg-gray-700');
             event.currentTarget.classList.add('bg-gray-700');
+
+            // Load data when switching to users tab
+            if (tabId === 'users') {
+                renderAdminUsers();
+            }
         }
 
         // Show reception tab
@@ -2279,62 +2314,62 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         // Handle login form submission
-       // Handle login form submission
-function handleLogin(event) {
-    event.preventDefault();
+        // Handle login form submission
+        function handleLogin(event) {
+            event.preventDefault();
 
-    const email = document.getElementById('login-email').value;
-    const password = document.getElementById('login-password').value;
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
 
-    if (!email || !password) {
-        showErrorModal('Login Error', 'Please enter both email and password.');
-        return;
-    }
+            if (!email || !password) {
+                showErrorModal('Login Error', 'Please enter both email and password.');
+                return;
+            }
 
-    // Show loading indicator
-    const loginBtn = document.querySelector('#login-form button[type="submit"]');
-    const originalBtnText = loginBtn.innerHTML;
-    loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging in...';
-    loginBtn.disabled = true;
+            // Show loading indicator
+            const loginBtn = document.querySelector('#login-form button[type="submit"]');
+            const originalBtnText = loginBtn.innerHTML;
+            loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging in...';
+            loginBtn.disabled = true;
 
-    // Send data to server
-    fetch('login.php', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            email: email,
-            password: password
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Store user data
-            currentUser = data.user;
-            localStorage.setItem('hotelBookingUser', JSON.stringify(currentUser));
-            updateUIForUser();
+            // Send data to server
+            fetch('login.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    email: email,
+                    password: password
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Store user data
+                        currentUser = data.user;
+                        localStorage.setItem('hotelBookingUser', JSON.stringify(currentUser));
+                        updateUIForUser();
 
-            showSuccessModal('Login Successful', 'Welcome back, ' + data.user.name + '!');
-            showSection('home');
-        } else {
-            showErrorModal('Login Error', data.message || 'Invalid email or password');
+                        showSuccessModal('Login Successful', 'Welcome back, ' + data.user.name + '!');
+                        showSection('home');
+                    } else {
+                        showErrorModal('Login Error', data.message || 'Invalid email or password');
+                    }
+                })
+                .catch(error => {
+                    showErrorModal('Login Error', 'An error occurred. Please try again.');
+                    console.error('Error:', error);
+                })
+                .finally(() => {
+                    // Restore button state
+                    loginBtn.innerHTML = originalBtnText;
+                    loginBtn.disabled = false;
+                });
         }
-    })
-    .catch(error => {
-        showErrorModal('Login Error', 'An error occurred. Please try again.');
-        console.error('Error:', error);
-    })
-    .finally(() => {
-        // Restore button state
-        loginBtn.innerHTML = originalBtnText;
-        loginBtn.disabled = false;
-    });
-}
 
-// Add event listener for login form
-document.getElementById('login-form').addEventListener('submit', handleLogin);
+        // Add event listener for login form
+        document.getElementById('login-form').addEventListener('submit', handleLogin);
 
         // Enhanced registration validation functions
         function validateEmail(email) {
@@ -2915,31 +2950,82 @@ document.getElementById('login-form').addEventListener('submit', handleLogin);
         }
 
         // Admin user management
+        // Admin user management
         function renderAdminUsers(filter = '') {
             const tbody = document.getElementById('admin-user-table-body');
-            let users = adminUsers;
+
+            // Show loading state
+            tbody.innerHTML = `
+        <tr>
+            <td colspan="6" class="px-6 py-4 text-center text-gray-500">
+                <i class="fas fa-spinner fa-spin mr-2"></i> Loading users...
+            </td>
+        </tr>
+    `;
+
+            // Build URL with filter parameter if needed
+            let url = 'admin_get_users.php';
             if (filter) {
-                users = users.filter(u => u.name.toLowerCase().includes(filter.toLowerCase()) || u.email.toLowerCase().includes(filter.toLowerCase()));
+                url += `?search=${encodeURIComponent(filter)}`;
             }
-            tbody.innerHTML = users.length ? '' : `<tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">No users found</td></tr>`;
-            users.forEach(user => {
-                tbody.innerHTML += `
+
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    return response.json();
+                })
+                .then(users => {
+                    if (users.error) throw new Error(users.error);
+
+                    if (filter) {
+                        users = users.filter(u =>
+                            u.name.toLowerCase().includes(filter.toLowerCase()) ||
+                            u.email.toLowerCase().includes(filter.toLowerCase())
+                        );
+                    }
+
+                    tbody.innerHTML = users.length ? '' : `
                 <tr>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${user.id}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${user.name}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${user.email}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${user.role === 'admin' ? 'bg-purple-100 text-purple-800' : user.role === 'reception' ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800'}">${user.role.charAt(0).toUpperCase() + user.role.slice(1)}</span>
+                    <td colspan="6" class="px-6 py-4 text-center text-gray-500">
+                        No users found
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${user.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">${user.status.charAt(0).toUpperCase() + user.status.slice(1)}</span>
+                </tr>
+            `;
+
+                    users.forEach(user => {
+                        tbody.innerHTML += `
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${user.id}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${user.name}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${user.email}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${user.role === 'Admin' ? 'bg-purple-100 text-purple-800' : user.role === 'Reception' ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800'}">
+                                ${user.role}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <button class="text-blue-600 hover:text-blue-900 mr-3" onclick="showUserModal('edit', ${user.id})">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="text-red-600 hover:text-red-900" onclick="deleteUser(${user.id})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                    });
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="px-6 py-4 text-center text-gray-500">
+                        <i class="fas fa-exclamation-triangle mr-2"></i> 
+                        Error loading users: ${error.message}
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <button class="text-blue-600 hover:text-blue-900 mr-3" onclick="showUserModal('edit',${user.id})"><i class="fas fa-edit"></i></button>
-                        <button class="text-red-600 hover:text-red-900" onclick="deleteUser(${user.id})"><i class="fas fa-trash"></i></button>
-                    </td>
-                </tr>`;
-            });
+                </tr>
+            `;
+                });
         }
 
         document.addEventListener('DOMContentLoaded', function () {
@@ -2948,62 +3034,187 @@ document.getElementById('login-form').addEventListener('submit', handleLogin);
             document.querySelector('#admin-users-tab input[type="text"]').addEventListener('input', function () {
                 renderAdminUsers(this.value);
             });
+            // Thêm sự kiện submit cho form
             document.getElementById('user-modal-form').addEventListener('submit', function (e) {
                 e.preventDefault();
+
                 const id = document.getElementById('user-modal-id').value;
                 const name = document.getElementById('user-modal-name').value;
                 const email = document.getElementById('user-modal-email').value;
                 const password = document.getElementById('user-modal-password').value;
                 const role = document.getElementById('user-modal-role').value;
                 const status = document.getElementById('user-modal-status').value;
-                if (id) {
-                    // Edit
-                    const user = adminUsers.find(u => u.id == id);
-                    if (user) {
-                        user.name = name; user.email = email; user.role = role; user.status = status;
-                        if (password) user.password = password; // chỉ cập nhật nếu nhập mật khẩu mới
-                    }
-                } else {
-                    // Add
-                    adminUsers.push({ id: Date.now(), name, email, role, status, password });
+
+                // Validate
+                if (!name || !email || (!id && !password)) {
+                    showErrorModal('Validation Error', 'Please fill in all required fields');
+                    return;
                 }
-                hideUserModal();
-                renderAdminUsers();
-                showSuccessModal('User Saved', 'User information has been saved.');
+
+                // Prepare data
+                const userData = {
+                    id: id || null,
+                    name: name,
+                    email: email,
+                    password: password,
+                    role: role,
+                    status: status
+                };
+
+                // Determine if this is an add or edit operation
+                const isEdit = !!id;
+
+                // Show loading state
+                const submitBtn = this.querySelector('button[type="submit"]');
+                const originalBtnText = submitBtn.innerHTML;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+                submitBtn.disabled = true;
+
+                // Send request
+                fetch(isEdit ? 'admin_update_user.php' : 'admin_add_user.php', {
+                    method: isEdit ? 'PUT' : 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(userData)
+                })
+                    .then(response => {
+                        if (!response.ok) throw new Error('Network response was not ok');
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.success) {
+                            hideUserModal();
+                            renderAdminUsers();
+                            showSuccessModal('Success', data.message || (isEdit ? 'User updated successfully' : 'User added successfully'));
+                        } else {
+                            throw new Error(data.message || 'Operation failed');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        showErrorModal('Error', error.message || 'An error occurred');
+                    })
+                    .finally(() => {
+                        submitBtn.innerHTML = originalBtnText;
+                        submitBtn.disabled = false;
+                    });
             });
+
+            // Khởi tạo danh sách người dùng khi vào trang admin
+            if (window.location.href.includes('section=admin')) {
+                renderAdminUsers();
+            }
         });
 
         function showUserModal(mode, id = null) {
-            document.getElementById('user-modal').classList.remove('hidden');
-            if (mode === 'add') {
-                document.getElementById('user-modal-title').textContent = 'Add User';
-                document.getElementById('user-modal-id').value = '';
-                document.getElementById('user-modal-name').value = '';
-                document.getElementById('user-modal-email').value = '';
-                document.getElementById('user-modal-role').value = 'user';
-                document.getElementById('user-modal-status').value = 'active';
-            } else {
-                document.getElementById('user-modal-title').textContent = 'Edit User';
-                const user = adminUsers.find(u => u.id == id);
-                if (user) {
-                    document.getElementById('user-modal-id').value = user.id;
-                    document.getElementById('user-modal-name').value = user.name;
-                    document.getElementById('user-modal-email').value = user.email;
-                    document.getElementById('user-modal-role').value = user.role;
-                    document.getElementById('user-modal-status').value = user.status;
-                }
+            const modal = document.getElementById('user-modal');
+            const title = document.getElementById('user-modal-title');
+            const form = document.getElementById('user-modal-form');
+
+            modal.classList.remove('hidden');
+            title.textContent = mode === 'add' ? 'Add User' : 'Edit User';
+            form.reset();
+            document.getElementById('user-modal-id').value = id || '';
+
+            if (mode === 'edit' && id) {
+                // Fetch user data
+                fetch(`admin_get_user.php?id=${id}`)
+                    .then(response => response.json())
+                    .then(user => {
+                        if (user.error) throw new Error(user.error);
+
+                        document.getElementById('user-modal-name').value = user.name || '';
+                        document.getElementById('user-modal-email').value = user.email || '';
+                        document.getElementById('user-modal-role').value = user.role.toLowerCase() || 'user';
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        showErrorModal('Error', 'Failed to load user data');
+                        hideUserModal();
+                    });
             }
         }
+
+        function saveUser() {
+            const id = document.getElementById('user-modal-id').value;
+            const name = document.getElementById('user-modal-name').value;
+            const email = document.getElementById('user-modal-email').value;
+            const password = document.getElementById('user-modal-password').value;
+            const role = document.getElementById('user-modal-role').value;
+
+            if (!name || !email || (!id && !password)) {
+                showErrorModal('Validation Error', 'Please fill in all required fields');
+                return;
+            }
+
+            const userData = {
+                id: id || null,
+                name: name,
+                email: email,
+                password: password,
+                role: role
+            };
+
+            const url = id ? 'admin_update_user.php' : 'admin_add_user.php';
+            const method = id ? 'PUT' : 'POST';
+
+            fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(userData)
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        hideUserModal();
+                        renderAdminUsers();
+                        showSuccessModal('Success', data.message || 'User saved successfully');
+                    } else {
+                        showErrorModal('Error', data.message || 'Failed to save user');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showErrorModal('Error', 'An error occurred while saving user');
+                });
+        }
+
         function hideUserModal() {
             document.getElementById('user-modal').classList.add('hidden');
         }
         function deleteUser(id) {
-            if (confirm('Are you sure you want to delete this user?')) {
-                adminUsers = adminUsers.filter(u => u.id != id);
-                renderAdminUsers();
-                showSuccessModal('User Deleted', 'User has been deleted.');
-            }
+            if (!confirm('Are you sure you want to delete this user?')) return;
+
+            fetch('admin_delete_user.php', {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ id: id })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        renderAdminUsers();
+                        showSuccessModal('Success', data.message || 'User deleted successfully');
+                    } else {
+                        showErrorModal('Error', data.message || 'Failed to delete user');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showErrorModal('Error', 'An error occurred while deleting user');
+                });
         }
+
+        // Thêm sự kiện submit cho form
+        document.getElementById('user-modal-form').addEventListener('submit', function (e) {
+            e.preventDefault();
+            saveUser();
+        });
 
         // Room management functions
         function renderAdminRooms(filter = '') {
