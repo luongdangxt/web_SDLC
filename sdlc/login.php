@@ -26,11 +26,22 @@ if (!$user || !password_verify($password, $user['Password'])) {
     exit;
 }
 
+// Start session and store user data
+session_start();
+$_SESSION['user'] = [
+    'id' => $user['UserID'],
+    'name' => $user['Fullname'],
+    'email' => $user['Email'],
+    'phone' => $user['Phonenumber'],
+    'role' => $user['RoleName'],
+    'permissions' => json_decode($user['Permissions'], true)
+];
+
 // Update last login time
 $updateStmt = $pdo->prepare("UPDATE user_ SET UpdatedAt = NOW() WHERE UserID = ?");
 $updateStmt->execute([$user['UserID']]);
 
-// Prepare user data to return (don't include password)
+// Prepare user data to return
 $userData = [
     'id' => $user['UserID'],
     'name' => $user['Fullname'],
