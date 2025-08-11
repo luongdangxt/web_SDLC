@@ -1,5 +1,4 @@
 <?php
-require_once 'cors_headers.php';
 require_once 'db.php';
 
 header('Content-Type: application/json');
@@ -23,7 +22,7 @@ $imageUrl = $input['imageUrl'];
 
 try {
     // Xóa ảnh khỏi database
-    $stmt = $pdo->prepare('DELETE FROM RoomImage WHERE ImageURL = ?');
+    $stmt = $pdo->prepare('DELETE FROM roomimage WHERE ImageURL = ?');
     $stmt->execute([$imageUrl]);
     
     // Xóa file ảnh khỏi server nếu tồn tại

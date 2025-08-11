@@ -1,5 +1,4 @@
 <?php
-require_once 'cors_headers.php';
 require_once 'db.php';
 session_start();
 
@@ -21,7 +20,7 @@ if (empty($data['bookingID'])) {
 
 try {
     // Kiểm tra booking thuộc về user này
-    $stmt = $pdo->prepare("SELECT UserID FROM Booking WHERE BookingID = :bookingID");
+    $stmt = $pdo->prepare("SELECT UserID FROM booking WHERE BookingID = :bookingID");
     $stmt->execute([':bookingID' => $data['bookingID']]);
     $booking = $stmt->fetch();
     
@@ -37,7 +36,7 @@ try {
     
     // Cập nhật trạng thái booking
     $stmt = $pdo->prepare("
-        UPDATE Booking 
+        UPDATE booking 
         SET Status = 'cancelled', UpdatedAt = NOW() 
         WHERE BookingID = :bookingID
     ");

@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quick Upload Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .upload-area {
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            background: white;
+            margin: 20px 0;
+            transition: all 0.3s ease;
+        }
+        
+        .upload-area:hover {
+            border-color: #ff6b35;
+            background: #fff5f0;
+        }
+        
+        .upload-area.dragover {
+            border-color: #ff6b35;
+            background: #fff5f0;
+            transform: scale(1.02);
+        }
+        
+        .preview-area {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .preview-item {
+            position: relative;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+            background: white;
+        }
+        
+        .preview-item img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+        }
+        
+        .preview-item .info {
+            padding: 10px;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .btn {
+            background: #ff6b35;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        
+        .btn:hover {
+            background: #e55a2b;
+        }
+        
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            text-align: center;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+    </style>
+</head>
+<body>
+    <h1>🖼️ Quick Image Upload Test</h1>
+    
+    <div class="upload-area" id="uploadArea">
+        <p>📁 Kéo thả ảnh vào đây hoặc</p>
+        <button class="btn" onclick="document.getElementById('fileInput').click()">
+            Chọn ảnh
+        </button>
+        <input type="file" id="fileInput" multiple accept="image/*" style="display: none;">
+        <p style="font-size: 12px; color: #666; margin-top: 10px;">
+            Hỗ trợ: JPG, PNG, GIF, WebP (Max: 5MB)
+        </p>
+    </div>
+    
+    <div id="status"></div>
+    
+    <div class="preview-area" id="previewArea"></div>
+    
+    <div style="text-align: center;">
+        <button class="btn" id="uploadBtn" disabled>
+            📤 Upload All
+        </button>
+        <button class="btn" onclick="clearAll()" style="background: #6c757d;">
+            🗑️ Clear All
+        </button>
+    </div>
+    
+    <div style="margin-top: 30px; padding: 20px; background: white; border-radius: 8px;">
+        <h3>📊 Debug Info</h3>
+        <div id="debugInfo" style="font-family: monospace; font-size: 12px; color: #666;"></div>
+    </div>
+    
+    <script src="image_handler.js"></script>
+    <script>
+        let selectedFiles = [];
+        
+        // Elements
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const previewArea = document.getElementById('previewArea');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const statusDiv = document.getElementById('status');
+        const debugDiv = document.getElementById('debugInfo');
+        
+        // Debug info
+        function updateDebugInfo() {
+            debugDiv.innerHTML = `
+                <strong>Selected files:</strong> ${selectedFiles.length}<br>
+                <strong>Current URL:</strong> ${window.location.href}<br>
+                <strong>Image Handler:</strong> ${window.ImageHandler ? '✅ Loaded' : '❌ Not loaded'}<br>
+                <strong>Upload directory:</strong> uploads/room_images/<br>
+                <strong>Max file size:</strong> 5MB<br>
+                <strong>Supported formats:</strong> JPG, PNG, GIF, WebP
+            `;
+        }
+        
+        // Show status
+        function showStatus(message, type = 'info') {
+            statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+        
+        // Handle file selection
+        function handleFiles(files) {
+            Array.from(files).forEach(file => {
+                if (!file.type.startsWith('image/')) {
+                    showStatus(`❌ ${file.name} không phải là ảnh`, 'error');
+                    return;
+                }
+                
+                if (file.size > 5 * 1024 * 1024) {
+                    showStatus(`❌ ${file.name} quá lớn (Max: 5MB)`, 'error');
+                    return;
+                }
+                
+                selectedFiles.push(file);
+                createPreview(file);
+            });
+            
+            uploadBtn.disabled = selectedFiles.length === 0;
+            updateDebugInfo();
+        }
+        
+        // Create preview
+        async function createPreview(file) {
+            const previewItem = document.createElement('div');
+            previewItem.className = 'preview-item';
+            
+            try {
+                const img = await window.ImageHandler.createPreview(file);
+                const info = document.createElement('div');
+                info.className = 'info';
+                info.innerHTML = `
+                    <strong>${file.name}</strong><br>
+                    Size: ${(file.size / 1024).toFixed(1)} KB<br>
+                    Type: ${file.type}
+                `;
+                
+                previewItem.appendChild(img);
+                previewItem.appendChild(info);
+                previewArea.appendChild(previewItem);
+                
+                showStatus(`✅ Đã thêm ${file.name}`, 'success');
+            } catch (error) {
+                showStatus(`❌ Lỗi preview ${file.name}: ${error}`, 'error');
+            }
+        }
+        
+        // Upload all files
+        async function uploadAll() {
+            if (selectedFiles.length === 0) return;
+            
+            uploadBtn.disabled = true;
+            showStatus('📤 Đang upload...', 'info');
+            
+            let successCount = 0;
+            let failCount = 0;
+            
+            for (const file of selectedFiles) {
+                try {
+                    const formData = new FormData();
+                    formData.append('image', file);
+                    
+                    const result = await window.ImageHandler.uploadImage(formData);
+                    console.log('Upload success:', result);
+                    successCount++;
+                } catch (error) {
+                    console.error('Upload failed:', error);
+                    failCount++;
+                }
+            }
+            
+            if (failCount === 0) {
+                showStatus(`✅ Upload thành công ${successCount} ảnh!`, 'success');
+            } else {
+                showStatus(`⚠️ Upload xong: ${successCount} thành công, ${failCount} lỗi`, 'error');
+            }
+            
+            uploadBtn.disabled = false;
+        }
+        
+        // Clear all
+        function clearAll() {
+            selectedFiles = [];
+            previewArea.innerHTML = '';
+            uploadBtn.disabled = true;
+            showStatus('🗑️ Đã xóa tất cả', 'info');
+            updateDebugInfo();
+        }
+        
+        // Event listeners
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+        
+        uploadBtn.addEventListener('click', uploadAll);
+        
+        // Drag and drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            handleFiles(e.dataTransfer.files);
+        });
+        
+        // Initialize
+        updateDebugInfo();
+        showStatus('🚀 Ready to upload!', 'info');
+        
+        // Test image handler
+        setTimeout(() => {
+            if (window.ImageHandler) {
+                console.log('✅ Image Handler loaded successfully');
+            } else {
+                console.error('❌ Image Handler not loaded');
+                showStatus('❌ Image Handler không load được', 'error');
+            }
+        }, 1000);
+    </script>
+</body>
+</html>

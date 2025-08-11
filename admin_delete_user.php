@@ -1,5 +1,4 @@
 <?php
-require_once 'cors_headers.php';
 require_once 'db.php';
 
 header('Content-Type: application/json');
@@ -20,7 +19,7 @@ if (empty($id)) {
 
 try {
     // Check if user exists
-    $stmt = $pdo->prepare("SELECT * FROM Users WHERE UserID = ?");
+    $stmt = $pdo->prepare("SELECT * FROM users WHERE UserID = ?");
     $stmt->execute([$id]);
     
     if ($stmt->rowCount() === 0) {
@@ -29,7 +28,7 @@ try {
     }
     
     // Delete user
-    $stmt = $pdo->prepare("DELETE FROM Users WHERE UserID = ?");
+    $stmt = $pdo->prepare("DELETE FROM users WHERE UserID = ?");
     $stmt->execute([$id]);
     
     echo json_encode(['success' => true, 'message' => 'User deleted successfully']);

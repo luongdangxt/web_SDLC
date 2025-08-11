@@ -1,5 +1,4 @@
 <?php
-require_once 'cors_headers.php';
 require_once 'db.php';
 
 header('Content-Type: application/json');
@@ -9,7 +8,7 @@ $id = $_GET['id'] ?? 0;
 try {
     $stmt = $pdo->prepare("SELECT u.UserID as id, u.Fullname as name, u.Email as email, 
                       r.RoleName as role
-                      FROM Users u JOIN Role r ON u.Role = r.RoleID 
+                      FROM users u JOIN role r ON u.Role = r.RoleID 
                       WHERE u.UserID = ?");
     $stmt->execute([$id]);
     $user = $stmt->fetch(PDO::FETCH_ASSOC);

@@ -1,46 +1,53 @@
 <?php
-require_once 'cors_headers.php';
 require_once 'db.php';
-
 header('Content-Type: application/json');
 
-$roomId = $_GET['id'] ?? 0;
+error_log("Received request for room details");
 
-if (!$roomId) {
-    echo json_encode(['success' => false, 'message' => 'Room ID is required']);
+if (!isset($_GET['id'])) {
+    error_log("Room ID is missing");
+    echo json_encode(['error' => 'Room ID is required']);
     exit;
 }
 
+$roomID = $_GET['id'];
+error_log("Fetching details for room ID: " . $roomID);
+
 try {
-    // Get room details
-    $stmt = $pdo->prepare("
-        SELECT r.RoomID, r.RoomNumber, r.Price, r.Capacity, r.Status,
-               rt.TypeName, rt.Description
-        FROM Room r
-        JOIN RoomType rt ON r.RoomTypeID = rt.RoomTypeID
-        WHERE r.RoomID = :roomId
-    ");
-    $stmt->execute([':roomId' => $roomId]);
-    $room = $stmt->fetch(PDO::FETCH_ASSOC);
+    // Lấy thông tin cơ bản của phòng
+    $query = "SELECT 
+                r.RoomID, 
+                r.RoomNumber, 
+                rt.TypeName, 
+                rt.Description AS TypeDescription,
+                r.Price,
+                r.Status
+              FROM room r
+              JOIN roomtype rt ON r.RoomTypeID = rt.RoomTypeID
+              WHERE r.RoomID = :roomID";
     
+    $stmt = $pdo->prepare($query);
+    $stmt->execute([':roomID' => $roomID]);
+    $room = $stmt->fetch(PDO::FETCH_ASSOC);
+
     if (!$room) {
-        echo json_encode(['success' => false, 'message' => 'Room not found']);
+        error_log("Room not found for ID: " . $roomID);
+        echo json_encode(['error' => 'Room not found']);
         exit;
     }
-    
-    // Get room images
-    $stmt = $pdo->prepare("SELECT ImageURL FROM RoomImage WHERE RoomID = :roomId");
-    $stmt->execute([':roomId' => $roomId]);
+
+    // Lấy danh sách ảnh của phòng
+    $query = "SELECT ImageURL FROM roomimage WHERE RoomID = :roomID";
+    $stmt = $pdo->prepare($query);
+    $stmt->execute([':roomID' => $roomID]);
     $images = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    
-    $room['Images'] = array_column($images, 'ImageURL');
-    
-    echo json_encode([
-        'success' => true,
-        'room' => $room
-    ]);
-    
+
+    $room['images'] = $images;
+
+    error_log("Returning room data: " . json_encode($room));
+    echo json_encode($room);
+
 } catch (PDOException $e) {
-    echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
+    error_log("Database error: " . $e->getMessage());
+    echo json_encode(['error' => 'Database error: ' . $e->getMessage()]);
 }
-?>
