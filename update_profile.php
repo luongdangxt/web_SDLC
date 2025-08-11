@@ -1,107 +1,85 @@
 <?php
+require_once 'cors_headers.php';
 require_once 'db.php';
+session_start();
 
 header('Content-Type: application/json');
 
-// Check if user is logged in
-session_start();
+// Kiểm tra đăng nhập
 if (!isset($_SESSION['user'])) {
-    echo json_encode(['success' => false, 'message' => 'User not logged in']);
+    echo json_encode(['success' => false, 'message' => 'Unauthorized access']);
     exit;
 }
 
-$input = json_decode(file_get_contents('php://input'), true);
+$data = json_decode(file_get_contents('php://input'), true);
 
-if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !$input) {
-    echo json_encode(['success' => false, 'message' => 'Invalid request']);
+if (!$data) {
+    echo json_encode(['success' => false, 'message' => 'Invalid request data']);
     exit;
 }
 
-$userId = $_SESSION['user']['id'];
-$name = $input['name'] ?? '';
-$phone = $input['phone'] ?? '';
-$currentPassword = $input['current_password'] ?? '';
-$newPassword = $input['new_password'] ?? '';
+$name = trim($data['name'] ?? '');
+$phone = trim($data['phone'] ?? '');
+$currentPassword = $data['currentPassword'] ?? '';
+$newPassword = $data['newPassword'] ?? '';
 
-// Validate required fields
-if (empty($name) || empty($phone)) {
-    echo json_encode(['success' => false, 'message' => 'Name and phone are required']);
-    exit;
-}
-
-// Validate phone number format (basic validation)
-if (!preg_match('/^[0-9+\-\s\(\)]{10,15}$/', $phone)) {
-    echo json_encode(['success' => false, 'message' => 'Invalid phone number format']);
+// Validate input
+if (empty($name)) {
+    echo json_encode(['success' => false, 'message' => 'Name is required']);
     exit;
 }
 
 try {
-    // Start transaction
-    $pdo->beginTransaction();
+    $userId = $_SESSION['user']['id'];
     
-    // Check if user exists and get current data
-    $stmt = $pdo->prepare("SELECT * FROM users WHERE UserID = ?");
-    $stmt->execute([$userId]);
-    $user = $stmt->fetch(PDO::FETCH_ASSOC);
-    
-    if (!$user) {
-        echo json_encode(['success' => false, 'message' => 'User not found']);
-        exit;
-    }
-    
-    // If changing password, validate current password
-    if (!empty($currentPassword) || !empty($newPassword)) {
-        if (empty($currentPassword) || empty($newPassword)) {
-            echo json_encode(['success' => false, 'message' => 'Both current and new password are required']);
+    // Verify current password if changing password
+    if (!empty($newPassword)) {
+        if (empty($currentPassword)) {
+            echo json_encode(['success' => false, 'message' => 'Current password is required to change password']);
             exit;
         }
         
-        if (!password_verify($currentPassword, $user['Password'])) {
+        // Get current password hash
+        $stmt = $pdo->prepare("SELECT Password FROM Users WHERE UserID = ?");
+        $stmt->execute([$userId]);
+        $user = $stmt->fetch();
+        
+        if (!$user || !password_verify($currentPassword, $user['Password'])) {
             echo json_encode(['success' => false, 'message' => 'Current password is incorrect']);
             exit;
         }
         
+        // Validate new password
         if (strlen($newPassword) < 6) {
-            echo json_encode(['success' => false, 'message' => 'New password must be at least 6 characters long']);
+            echo json_encode(['success' => false, 'message' => 'New password must be at least 6 characters']);
             exit;
         }
         
         // Update with new password
         $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
-        $stmt = $pdo->prepare("UPDATE users SET Fullname = ?, Phonenumber = ?, Password = ?, UpdatedAt = NOW() WHERE UserID = ?");
+        $stmt = $pdo->prepare("UPDATE Users SET Fullname = ?, Phonenumber = ?, Password = ?, UpdatedAt = NOW() WHERE UserID = ?");
         $stmt->execute([$name, $phone, $hashedPassword, $userId]);
     } else {
         // Update without password change
-        $stmt = $pdo->prepare("UPDATE users SET Fullname = ?, Phonenumber = ?, UpdatedAt = NOW() WHERE UserID = ?");
+        $stmt = $pdo->prepare("UPDATE Users SET Fullname = ?, Phonenumber = ?, UpdatedAt = NOW() WHERE UserID = ?");
         $stmt->execute([$name, $phone, $userId]);
     }
     
-    // Commit transaction
-    $pdo->commit();
-    
     // Update session data
-    $_SESSION['user']['name'] = $name;
+    $_SESSION['user']['fullname'] = $name;
     $_SESSION['user']['phone'] = $phone;
     
-    // Return updated user data
-    $userData = [
-        'id' => $userId,
-        'name' => $name,
-        'email' => $_SESSION['user']['email'],
-        'phone' => $phone,
-        'role' => $_SESSION['user']['role'],
-        'avatar' => $_SESSION['user']['avatar'] ?? null
-    ];
-    
     echo json_encode([
-        'success' => true, 
+        'success' => true,
         'message' => 'Profile updated successfully',
-        'user' => $userData
+        'user' => [
+            'id' => $userId,
+            'name' => $name,
+            'phone' => $phone
+        ]
     ]);
     
 } catch (PDOException $e) {
-    // Rollback transaction on error
-    $pdo->rollBack();
     echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
 }
 ?> 

@@ -1,4 +1,5 @@
 <?php
+require_once 'cors_headers.php';
 require_once 'db.php';
 
 header('Content-Type: application/json');
@@ -19,7 +20,7 @@ if (empty($roomID)) {
 
 try {
     // Check room exists
-    $stmt = $pdo->prepare('SELECT * FROM rooms WHERE RoomID = ?');
+    $stmt = $pdo->prepare('SELECT * FROM Room WHERE RoomID = ?');
     $stmt->execute([$roomID]);
     if (!$stmt->fetch()) {
         echo json_encode(['success' => false, 'message' => 'Room does not exist']);
@@ -27,10 +28,10 @@ try {
     }
     $pdo->beginTransaction();
     // First delete images
-    $stmt = $pdo->prepare('DELETE FROM room_images WHERE RoomID = ?');
+    $stmt = $pdo->prepare('DELETE FROM RoomImage WHERE RoomID = ?');
     $stmt->execute([$roomID]);
     // Then delete room
-    $stmt = $pdo->prepare('DELETE FROM rooms WHERE RoomID = ?');
+    $stmt = $pdo->prepare('DELETE FROM Room WHERE RoomID = ?');
     $stmt->execute([$roomID]);
     $pdo->commit();
     echo json_encode(['success' => true, 'message' => 'Room deleted successfully']);
