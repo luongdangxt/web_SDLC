@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Avatar Display</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-container { display: flex; gap: 20px; margin: 20px 0; }
+        .avatar-test { text-align: center; }
+        .avatar-test img { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid #007bff; }
+        .original { border-color: #28a745 !important; }
+        .uploaded { border-color: #dc3545 !important; }
+        .info { background: #f8f9fa; padding: 10px; margin: 10px 0; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <h1>Test Avatar Display</h1>
+    
+    <div>
+        <h3>Upload Test Image</h3>
+        <input type="file" id="test-image" accept="image/*" onchange="testDisplay(this)">
+        <div id="test-results"></div>
+    </div>
+
+    <script>
+        function testDisplay(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const originalDataUrl = e.target.result;
+                
+                // Display original image
+                const results = document.getElementById('test-results');
+                results.innerHTML = `
+                    <div class="test-container">
+                        <div class="avatar-test">
+                            <h4>Original (Green Border)</h4>
+                            <img src="${originalDataUrl}" alt="Original" class="original">
+                        </div>
+                    </div>
+                    <div class="info">
+                        <strong>Original Image Info:</strong><br>
+                        File: ${file.name}<br>
+                        Size: ${file.size} bytes<br>
+                        Type: ${file.type}<br>
+                        Data URL length: ${originalDataUrl.length}<br>
+                        Starts with data:image: ${originalDataUrl.startsWith('data:image')}
+                    </div>
+                `;
+                
+                // Test upload
+                uploadAndCompare(file, originalDataUrl);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function uploadAndCompare(file, originalDataUrl) {
+            const formData = new FormData();
+            formData.append('avatar', file);
+
+            fetch('upload_avatar.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const results = document.getElementById('test-results');
+                    const container = results.querySelector('.test-container');
+                    
+                    // Add uploaded image
+                    container.innerHTML += `
+                        <div class="avatar-test">
+                            <h4>After Upload (Red Border)</h4>
+                            <img src="${data.avatar_url}" alt="Uploaded" class="uploaded">
+                        </div>
+                    `;
+                    
+                    // Add comparison info
+                    results.innerHTML += `
+                        <div class="info">
+                            <strong>Upload Result:</strong><br>
+                            Success: ${data.success}<br>
+                            Uploaded URL length: ${data.avatar_url.length}<br>
+                            URLs identical: ${originalDataUrl === data.avatar_url}<br>
+                            <br>
+                            <strong>Quality Check:</strong><br>
+                            Original starts with data:image: ${originalDataUrl.startsWith('data:image')}<br>
+                            Uploaded starts with data:image: ${data.avatar_url.startsWith('data:image')}<br>
+                            <br>
+                            <strong>Visual Check:</strong><br>
+                            If the images look different, there's a processing issue.<br>
+                            If they look the same, the issue might be in the main website's CSS.
+                        </div>
+                    `;
+                    
+                    // Test retrieval
+                    setTimeout(() => {
+                        testRetrieval();
+                    }, 1000);
+                } else {
+                    console.error('Upload failed:', data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Upload error:', error);
+            });
+        }
+
+        function testRetrieval() {
+            fetch('get_profile.php')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.user.Avatar) {
+                        const results = document.getElementById('test-results');
+                        const container = results.querySelector('.test-container');
+                        
+                        // Add retrieved image
+                        container.innerHTML += `
+                            <div class="avatar-test">
+                                <h4>From Database (Blue Border)</h4>
+                                <img src="${data.user.Avatar}" alt="Retrieved" class="uploaded">
+                            </div>
+                        `;
+                        
+                        results.innerHTML += `
+                            <div class="info">
+                                <strong>Retrieval Result:</strong><br>
+                                Avatar exists: ${!!data.user.Avatar}<br>
+                                Retrieved URL length: ${data.user.Avatar.length}<br>
+                                Starts with data:image: ${data.user.Avatar.startsWith('data:image')}<br>
+                                <br>
+                                <strong>Final Check:</strong><br>
+                                All three images should look identical. If they don't, there's a data corruption issue.
+                            </div>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    console.error('Retrieval error:', error);
+                });
+        }
+    </script>
+</body>
+</html> 

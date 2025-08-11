@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Navigation Layout</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { border: 1px solid #ccc; margin: 10px 0; padding: 15px; }
+        .nav-preview { background: #1e40af; color: white; padding: 10px; border-radius: 5px; margin: 10px 0; }
+        .nav-container { display: flex; align-items: center; gap: 20px; }
+        .nav-item { display: flex; align-items: center; gap: 8px; }
+        .nav-avatar { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 2px solid white; }
+        .mobile-nav { display: flex; flex-direction: column; gap: 10px; }
+        .mobile-nav-item { display: flex; align-items: center; gap: 12px; }
+        .info { background: #f8f9fa; padding: 10px; margin: 10px 0; border-radius: 4px; }
+        .image-test { display: flex; gap: 20px; margin: 10px 0; }
+        .image-test img { width: 100px; height: 100px; border: 2px solid #ccc; }
+    </style>
+</head>
+<body>
+    <h1>Test Navigation Layout & Image Display</h1>
+    
+    <div class="test-section">
+        <h3>1. Desktop Navigation Layout</h3>
+        <div class="nav-preview">
+            <div class="nav-container">
+                <a href="#" class="hover:text-blue-200 transition duration-200 flex items-center gap-2">
+                    <i class="fas fa-search mr-1"></i> Search Rooms
+                </a>
+                <a href="#" class="hover:text-blue-200 transition duration-200 flex items-center gap-2">
+                    <i class="fas fa-calendar-check mr-1"></i> Book Room
+                </a>
+                <a href="#" class="hover:text-blue-200 transition duration-200 flex items-center gap-2">
+                    <i class="fas fa-history mr-1"></i> Booking History
+                </a>
+                <a href="#" class="hover:text-blue-200 transition duration-200 flex items-center gap-2">
+                    <img id="desktop-avatar" src="https://source.unsplash.com/random/32x32/?portrait" alt="Avatar" class="nav-avatar">
+                    <span id="desktop-username">Profile</span>
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h3>2. Mobile Navigation Layout</h3>
+        <div class="nav-preview">
+            <div class="mobile-nav">
+                <a href="#" class="py-2 hover:text-blue-200 transition duration-200 flex items-center gap-3">
+                    <i class="fas fa-search mr-3"></i> Search Rooms
+                </a>
+                <a href="#" class="py-2 hover:text-blue-200 transition duration-200 flex items-center gap-3">
+                    <i class="fas fa-calendar-check mr-3"></i> Book Room
+                </a>
+                <a href="#" class="py-2 hover:text-blue-200 transition duration-200 flex items-center gap-3">
+                    <i class="fas fa-history mr-3"></i> Booking History
+                </a>
+                <a href="#" class="py-2 hover:text-blue-200 transition duration-200 flex items-center gap-3">
+                    <img id="mobile-avatar" src="https://source.unsplash.com/random/32x32/?portrait" alt="Avatar" class="nav-avatar">
+                    <span id="mobile-username">Profile</span>
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h3>3. Image Display Test</h3>
+        <div class="image-test">
+            <div>
+                <h4>object-cover (Recommended)</h4>
+                <img src="https://source.unsplash.com/random/100x100/?portrait" alt="Cover" style="object-fit: cover;">
+            </div>
+            <div>
+                <h4>object-contain</h4>
+                <img src="https://source.unsplash.com/random/100x100/?portrait" alt="Contain" style="object-fit: contain;">
+            </div>
+            <div>
+                <h4>No object-fit</h4>
+                <img src="https://source.unsplash.com/random/100x100/?portrait" alt="None">
+            </div>
+        </div>
+        <div class="info">
+            <strong>Image Display Comparison:</strong><br>
+            • object-cover: Fills the container, may crop image<br>
+            • object-contain: Shows full image, may have empty space<br>
+            • No object-fit: Uses original image size
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h3>4. Test Functions</h3>
+        <button onclick="testImageUpload()">Test Image Upload</button>
+        <button onclick="testBase64Image()">Test Base64 Image</button>
+        <button onclick="updateTestNavigation()">Update Test Navigation</button>
+        <div id="test-results"></div>
+    </div>
+
+    <script>
+        function testImageUpload() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.onchange = function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const dataUrl = e.target.result;
+                        
+                        // Test the image
+                        const testResults = document.getElementById('test-results');
+                        testResults.innerHTML = `
+                            <div class="info">
+                                <strong>Upload Test Results:</strong><br>
+                                File: ${file.name}<br>
+                                Size: ${file.size} bytes<br>
+                                Type: ${file.type}<br>
+                                Data URL length: ${dataUrl.length}<br>
+                                Starts with data:image: ${dataUrl.startsWith('data:image')}<br>
+                                <br>
+                                <strong>Test Image:</strong><br>
+                                <img src="${dataUrl}" style="width: 100px; height: 100px; object-fit: cover; border: 2px solid #007bff;">
+                            </div>
+                        `;
+                        
+                        // Update navigation avatars
+                        document.getElementById('desktop-avatar').src = dataUrl;
+                        document.getElementById('mobile-avatar').src = dataUrl;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+            input.click();
+        }
+        
+        function testBase64Image() {
+            // Create a simple test image
+            const canvas = document.createElement('canvas');
+            canvas.width = 100;
+            canvas.height = 100;
+            const ctx = canvas.getContext('2d');
+            
+            // Draw a colorful test pattern
+            const gradient = ctx.createLinearGradient(0, 0, 100, 100);
+            gradient.addColorStop(0, '#ff0000');
+            gradient.addColorStop(0.5, '#00ff00');
+            gradient.addColorStop(1, '#0000ff');
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 100, 100);
+            
+            // Add some text
+            ctx.fillStyle = 'white';
+            ctx.font = '16px Arial';
+            ctx.fillText('TEST', 30, 50);
+            
+            const dataUrl = canvas.toDataURL('image/png');
+            
+            const testResults = document.getElementById('test-results');
+            testResults.innerHTML = `
+                <div class="info">
+                    <strong>Base64 Test Results:</strong><br>
+                    Data URL length: ${dataUrl.length}<br>
+                    Starts with data:image: ${dataUrl.startsWith('data:image')}<br>
+                    <br>
+                    <strong>Test Image:</strong><br>
+                    <img src="${dataUrl}" style="width: 100px; height: 100px; object-fit: cover; border: 2px solid #007bff;">
+                </div>
+            `;
+            
+            // Update navigation avatars
+            document.getElementById('desktop-avatar').src = dataUrl;
+            document.getElementById('mobile-avatar').src = dataUrl;
+        }
+        
+        function updateTestNavigation() {
+            const username = prompt('Enter username:', 'Test User');
+            if (username) {
+                document.getElementById('desktop-username').textContent = username;
+                document.getElementById('mobile-username').textContent = username;
+            }
+        }
+    </script>
+</body>
+</html> 

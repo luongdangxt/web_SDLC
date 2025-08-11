@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Avatar Functionality</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-case { border: 1px solid #ccc; margin: 10px 0; padding: 15px; }
+        .result { margin-top: 10px; padding: 10px; border-radius: 4px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        button { background: #007bff; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin: 5px; }
+        button:hover { background: #0056b3; }
+        .avatar-preview { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid #007bff; }
+        .upload-area { border: 2px dashed #ccc; padding: 20px; text-align: center; margin: 10px 0; }
+        .upload-area:hover { border-color: #007bff; }
+    </style>
+</head>
+<body>
+    <h1>Test Avatar Functionality</h1>
+    
+    <div class="test-case">
+        <h3>Test 1: Get Profile with Avatar</h3>
+        <button onclick="testGetProfileWithAvatar()">Test Get Profile</button>
+        <div id="result1" class="result"></div>
+        <div id="avatar-preview1"></div>
+    </div>
+    
+    <div class="test-case">
+        <h3>Test 2: Upload Avatar</h3>
+        <div class="upload-area">
+            <input type="file" id="avatar-file" accept="image/*" onchange="previewAvatar(this)">
+            <p>Select an image file (JPG, PNG, GIF, max 5MB)</p>
+        </div>
+        <div id="avatar-preview2"></div>
+        <button onclick="testUploadAvatar()">Upload Avatar</button>
+        <div id="result2" class="result"></div>
+    </div>
+    
+    <div class="test-case">
+        <h3>Test 3: Remove Avatar</h3>
+        <button onclick="testRemoveAvatar()">Remove Avatar</button>
+        <div id="result3" class="result"></div>
+    </div>
+
+    <script>
+        function testGetProfileWithAvatar() {
+            fetch('get_profile.php')
+                .then(response => response.json())
+                .then(data => {
+                    const result = document.getElementById('result1');
+                    const preview = document.getElementById('avatar-preview1');
+                    
+                    if (data.success) {
+                        result.className = 'result success';
+                        result.innerHTML = `
+                            ✓ PASS: Profile loaded successfully<br>
+                            <strong>Name:</strong> ${data.user.Fullname}<br>
+                            <strong>Email:</strong> ${data.user.Email}<br>
+                            <strong>Avatar:</strong> ${data.user.Avatar || 'No avatar set'}
+                        `;
+                        
+                        if (data.user.Avatar && data.user.Avatar.startsWith('data:image')) {
+                            // Base64 avatar
+                            preview.innerHTML = `<img src="${data.user.Avatar}" alt="Avatar" class="avatar-preview">`;
+                        } else if (data.user.Avatar && data.user.Avatar.startsWith('uploads/')) {
+                            // File path avatar (legacy)
+                            preview.innerHTML = `<img src="${data.user.Avatar}" alt="Avatar" class="avatar-preview">`;
+                        } else {
+                            preview.innerHTML = '<p>No avatar set</p>';
+                        }
+                    } else {
+                        result.className = 'result error';
+                        result.innerHTML = `✗ FAIL: ${data.message}`;
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('result1').innerHTML = `Error: ${error.message}`;
+                    document.getElementById('result1').className = 'result error';
+                });
+        }
+
+        function previewAvatar(input) {
+            const file = input.files[0];
+            const preview = document.getElementById('avatar-preview2');
+            
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.innerHTML = `<img src="${e.target.result}" alt="Preview" class="avatar-preview">`;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function testUploadAvatar() {
+            const fileInput = document.getElementById('avatar-file');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                document.getElementById('result2').innerHTML = 'Please select a file first';
+                document.getElementById('result2').className = 'result error';
+                return;
+            }
+
+            // Validate file type
+            const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+            if (!allowedTypes.includes(file.type)) {
+                document.getElementById('result2').innerHTML = 'Only JPG, PNG, and GIF files are allowed';
+                document.getElementById('result2').className = 'result error';
+                return;
+            }
+
+            // Validate file size (max 5MB)
+            const maxSize = 5 * 1024 * 1024; // 5MB
+            if (file.size > maxSize) {
+                document.getElementById('result2').innerHTML = 'File size must be less than 5MB';
+                document.getElementById('result2').className = 'result error';
+                return;
+            }
+
+            // Create FormData
+            const formData = new FormData();
+            formData.append('avatar', file);
+
+            // Upload file
+            fetch('upload_avatar.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                const result = document.getElementById('result2');
+                if (data.success) {
+                    result.className = 'result success';
+                    result.innerHTML = `✓ PASS: ${data.message}<br>Avatar URL: ${data.avatar_url}`;
+                    
+                    // Update preview with new avatar
+                    const preview = document.getElementById('avatar-preview2');
+                    preview.innerHTML = `<img src="${data.avatar_url}" alt="Uploaded Avatar" class="avatar-preview">`;
+                } else {
+                    result.className = 'result error';
+                    result.innerHTML = `✗ FAIL: ${data.message}`;
+                }
+            })
+            .catch(error => {
+                document.getElementById('result2').innerHTML = `Error: ${error.message}`;
+                document.getElementById('result2').className = 'result error';
+            });
+        }
+
+        function testRemoveAvatar() {
+            fetch('remove_avatar.php', {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                const result = document.getElementById('result3');
+                if (data.success) {
+                    result.className = 'result success';
+                    result.innerHTML = `✓ PASS: ${data.message}`;
+                } else {
+                    result.className = 'result error';
+                    result.innerHTML = `✗ FAIL: ${data.message}`;
+                }
+            })
+            .catch(error => {
+                document.getElementById('result3').innerHTML = `Error: ${error.message}`;
+                document.getElementById('result3').className = 'result error';
+            });
+        }
+    </script>
+</body>
+</html> 
