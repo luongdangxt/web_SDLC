@@ -1,4 +1,5 @@
 <?php
+require_once 'cors_headers.php';
 require_once 'db.php';
 
 header('Content-Type: application/json');
@@ -14,7 +15,7 @@ $userId = $_SESSION['user']['id'];
 
 try {
     // Update database to remove avatar
-    $stmt = $pdo->prepare("UPDATE users SET Avatar = NULL, UpdatedAt = NOW() WHERE UserID = ?");
+    $stmt = $pdo->prepare("UPDATE Users SET Avatar = NULL, UpdatedAt = NOW() WHERE UserID = ?");
     $stmt->execute([$userId]);
     
     // Update session data

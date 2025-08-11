@@ -1,10 +1,11 @@
 <?php
+require_once 'cors_headers.php';
 require_once 'db.php';
 
 header('Content-Type: application/json');
 
 try {
-    $stmt = $pdo->query("SELECT RoomTypeID, TypeName FROM roomtype ORDER BY TypeName");
+    $stmt = $pdo->query("SELECT RoomTypeID, TypeName FROM RoomType ORDER BY TypeName");
     $types = $stmt->fetchAll();
     
     if (empty($types)) {
@@ -22,3 +23,4 @@ try {
         'driver_message' => $e->errorInfo[2] ?? ''
     ]);
 }
+?>

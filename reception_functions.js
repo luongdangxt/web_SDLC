@@ -88,7 +88,7 @@ function processCheckout(bookingId, amount) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
             bookingID: bookingId,
-            status: 'completed',
+            action: 'checkout',
             paymentMethod: paymentMethod,
             amount: amount
         })

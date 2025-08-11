@@ -1,4 +1,5 @@
 <?php
+require_once 'cors_headers.php';
 require_once 'db.php';
 
 header('Content-Type: application/json');
@@ -14,7 +15,7 @@ $userId = $_SESSION['user']['id'];
 
 try {
     // Get current avatar data
-    $stmt = $pdo->prepare("SELECT Avatar, LENGTH(Avatar) as avatar_length FROM users WHERE UserID = ?");
+    $stmt = $pdo->prepare("SELECT Avatar, LENGTH(Avatar) as avatar_length FROM Users WHERE UserID = ?");
     $stmt->execute([$userId]);
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
     
@@ -24,7 +25,7 @@ try {
     }
     
     // Check field information
-    $stmt = $pdo->prepare("SHOW COLUMNS FROM users LIKE 'Avatar'");
+    $stmt = $pdo->prepare("SHOW COLUMNS FROM Users LIKE 'Avatar'");
     $stmt->execute();
     $fieldInfo = $stmt->fetch(PDO::FETCH_ASSOC);
     

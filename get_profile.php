@@ -1,23 +1,27 @@
 <?php
+require_once 'cors_headers.php';
 require_once 'db.php';
+session_start();
 
 header('Content-Type: application/json');
 
-// Check if user is logged in
-session_start();
+// Kiểm tra đăng nhập
 if (!isset($_SESSION['user'])) {
-    echo json_encode(['success' => false, 'message' => 'User not logged in']);
+    echo json_encode(['success' => false, 'message' => 'Unauthorized access']);
     exit;
 }
 
-$userId = $_SESSION['user']['id'];
-
 try {
-    $stmt = $pdo->prepare("SELECT u.UserID, u.Fullname, u.Email, u.Phonenumber, u.Avatar, u.Username, 
-                           r.RoleName, u.CreatedAt, u.UpdatedAt
-                           FROM users u 
-                           JOIN role r ON u.Role = r.RoleID 
-                           WHERE u.UserID = ?");
+    $userId = $_SESSION['user']['id'];
+    
+    // Lấy thông tin user
+    $stmt = $pdo->prepare("
+        SELECT u.UserID, u.Username, u.Email, u.Fullname, u.Phonenumber, u.Avatar, u.CreatedAt,
+               r.RoleName
+        FROM Users u
+        JOIN Role r ON u.Role = r.RoleID
+        WHERE u.UserID = ?
+    ");
     $stmt->execute([$userId]);
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
     
@@ -25,10 +29,6 @@ try {
         echo json_encode(['success' => false, 'message' => 'User not found']);
         exit;
     }
-    
-    // Format dates for display
-    $user['CreatedAt'] = date('F j, Y', strtotime($user['CreatedAt']));
-    $user['UpdatedAt'] = $user['UpdatedAt'] ? date('F j, Y', strtotime($user['UpdatedAt'])) : 'Never';
     
     echo json_encode([
         'success' => true,

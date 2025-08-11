@@ -1,4 +1,5 @@
 <?php
+require_once 'cors_headers.php';
 require_once 'db.php';
 
 header('Content-Type: application/json');
@@ -24,7 +25,7 @@ try {
         }
         
         // Get room images
-        $imageQuery = "SELECT ImageURL FROM roomimage WHERE RoomID = :roomId";
+        $imageQuery = "SELECT ImageURL FROM RoomImage WHERE RoomID = :roomId";
         $imageStmt = $pdo->prepare($imageQuery);
         $imageStmt->execute([':roomId' => $roomId]);
         $room['images'] = $imageStmt->fetchAll(PDO::FETCH_ASSOC);

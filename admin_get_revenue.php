@@ -1,4 +1,5 @@
 <?php
+require_once 'cors_headers.php';
 require_once 'db.php';
 session_start();
 
@@ -49,9 +50,9 @@ try {
             COALESCE(SUM(b.TotalAmount), 0) as totalRevenue,
             COUNT(b.BookingID) as totalBookings,
             AVG(b.TotalAmount) as avgBookingValue
-        FROM booking b
-        JOIN room r ON b.RoomID = r.RoomID
-        JOIN roomtype rt ON r.RoomTypeID = rt.RoomTypeID
+        FROM Booking b
+        JOIN Room r ON b.RoomID = r.RoomID
+        JOIN RoomType rt ON r.RoomTypeID = rt.RoomTypeID
         WHERE b.Status IN ('confirmed', 'checked-in', 'completed') 
         AND $dateCondition 
         $roomTypeCondition
@@ -68,9 +69,9 @@ try {
             COALESCE(SUM(b.TotalAmount), 0) as revenue,
             COUNT(b.BookingID) as bookings,
             AVG(b.TotalAmount) as avgRate
-        FROM roomtype rt
-        LEFT JOIN room r ON rt.RoomTypeID = r.RoomTypeID
-        LEFT JOIN booking b ON r.RoomID = b.RoomID 
+        FROM RoomType rt
+        LEFT JOIN Room r ON rt.RoomTypeID = r.RoomTypeID
+        LEFT JOIN Booking b ON r.RoomID = b.RoomID 
             AND b.Status IN ('confirmed', 'checked-in', 'completed')
             AND $dateCondition
         GROUP BY rt.RoomTypeID, rt.TypeName
@@ -98,12 +99,12 @@ try {
             CASE 
                 WHEN COUNT(b.BookingID) > 0 THEN 
                     ROUND((COUNT(b.BookingID) * 100.0 / 
-                        (SELECT COUNT(*) FROM booking WHERE Status IN ('confirmed', 'checked-in', 'completed') AND $dateCondition)), 1)
+                        (SELECT COUNT(*) FROM Booking WHERE Status IN ('confirmed', 'checked-in', 'completed') AND $dateCondition)), 1)
                 ELSE 0 
             END as occupancyRate
-        FROM room r
-        JOIN roomtype rt ON r.RoomTypeID = rt.RoomTypeID
-        LEFT JOIN booking b ON r.RoomID = b.RoomID 
+        FROM Room r
+        JOIN RoomType rt ON r.RoomTypeID = rt.RoomTypeID
+        LEFT JOIN Booking b ON r.RoomID = b.RoomID 
             AND b.Status IN ('confirmed', 'checked-in', 'completed')
             AND $dateCondition
         GROUP BY r.RoomID, r.RoomNumber, rt.TypeName
@@ -121,9 +122,9 @@ try {
             DATE(b.CreatedAt) as date,
             COALESCE(SUM(b.TotalAmount), 0) as revenue,
             COUNT(b.BookingID) as bookings
-        FROM booking b
-        JOIN room r ON b.RoomID = r.RoomID
-        JOIN roomtype rt ON r.RoomTypeID = rt.RoomTypeID
+        FROM Booking b
+        JOIN Room r ON b.RoomID = r.RoomID
+        JOIN RoomType rt ON r.RoomTypeID = rt.RoomTypeID
         WHERE b.Status IN ('confirmed', 'checked-in', 'completed')
         AND b.CreatedAt >= DATE_SUB(NOW(), INTERVAL 30 DAY)
         $roomTypeCondition
@@ -142,8 +143,8 @@ try {
             COUNT(DISTINCT CASE WHEN b.Status IN ('confirmed', 'checked-in') 
                 AND CURDATE() BETWEEN DATE(b.CheckinDate) AND DATE(b.CheckoutDate) 
                 THEN b.RoomID END) as occupiedRooms
-        FROM room r
-        LEFT JOIN booking b ON r.RoomID = b.RoomID
+        FROM Room r
+        LEFT JOIN Booking b ON r.RoomID = b.RoomID
     ";
 
     $stmt = $pdo->prepare($occupancyQuery);
@@ -177,9 +178,9 @@ try {
         SELECT 
             COALESCE(SUM(b.TotalAmount), 0) as totalRevenue,
             COUNT(b.BookingID) as totalBookings
-        FROM booking b
-        JOIN room r ON b.RoomID = r.RoomID
-        JOIN roomtype rt ON r.RoomTypeID = rt.RoomTypeID
+        FROM Booking b
+        JOIN Room r ON b.RoomID = r.RoomID
+        JOIN RoomType rt ON r.RoomTypeID = rt.RoomTypeID
         WHERE b.Status IN ('confirmed', 'checked-in', 'completed') 
         AND $prevPeriodCondition 
         $roomTypeCondition

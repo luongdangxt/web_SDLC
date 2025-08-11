@@ -28,13 +28,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             // Redirect based on role
             if ($user['RoleName'] === 'Admin') {
-                header('Location: codeweb.php?section=admin');
+                header('Location: index.php?section=admin');
                 exit();
             } elseif ($user['RoleName'] === 'Reception') {
-                header('Location: codeweb.php?section=reception');
+                header('Location: index.php?section=reception');
                 exit();
             } else {
-                header('Location: codeweb.php?section=home');
+                header('Location: index.php?section=home');
                 exit();
             }
         } else {
@@ -2336,17 +2336,22 @@ $section = $_GET['section'] ?? 'home';
 
             // Admin user management
             renderAdminUsers();
-            document.querySelector('#admin-users-tab input[type="text"]').addEventListener('input', function () {
-                renderAdminUsers(this.value);
-            });
-            document.getElementById('user-modal-form').addEventListener('submit', function (e) {
+            const adminUsersSearch = document.querySelector('#admin-users-tab input[type="text"]');
+            if (adminUsersSearch) {
+                adminUsersSearch.addEventListener('input', function () {
+                    renderAdminUsers(this.value);
+                });
+            }
+            const userModalForm = document.getElementById('user-modal-form');
+            if (userModalForm) userModalForm.addEventListener('submit', function (e) {
                 e.preventDefault();
                 const id = document.getElementById('user-modal-id').value;
                 const name = document.getElementById('user-modal-name').value;
                 const email = document.getElementById('user-modal-email').value;
                 const password = document.getElementById('user-modal-password').value;
                 const role = document.getElementById('user-modal-role').value;
-                const status = document.getElementById('user-modal-status').value;
+                const statusEl = document.getElementById('user-modal-status');
+                const status = statusEl ? statusEl.value : 'active';
                 if (id) {
                     // Edit
                     const user = adminUsers.find(u => u.id == id);
@@ -2368,7 +2373,8 @@ $section = $_GET['section'] ?? 'home';
             document.querySelector('#admin-rooms-tab input[type="text"]').addEventListener('input', function () {
                 renderAdminRooms(this.value);
             });
-            document.getElementById('room-modal-form').addEventListener('submit', function (e) {
+            const roomModalForm = document.getElementById('room-modal-form');
+            if (roomModalForm) roomModalForm.addEventListener('submit', function (e) {
                 e.preventDefault();
                 const id = document.getElementById('room-modal-id').value;
                 const name = document.getElementById('room-modal-name').value;
@@ -2422,7 +2428,8 @@ $section = $_GET['section'] ?? 'home';
 
 
         // Enhanced image upload handler
-        document.getElementById('room-image-upload').addEventListener('change', function (e) {
+        const roomImageUploadInput = document.getElementById('room-image-upload');
+        if (roomImageUploadInput) roomImageUploadInput.addEventListener('change', function (e) {
             const files = Array.from(e.target.files);
             const previewContainer = document.getElementById('room-images-preview');
             
@@ -2713,7 +2720,7 @@ $section = $_GET['section'] ?? 'home';
             if (id) roomData.roomID = id;
 
             const url = id ? 'admin_update_room.php' : 'admin_add_room.php';
-            const method = id ? 'PUT' : 'POST';
+            const method = 'POST';
 
             // Show loading state
             const submitBtn = this.querySelector('button[type="submit"]');
@@ -2983,7 +2990,7 @@ $section = $_GET['section'] ?? 'home';
                 roomCard.className = 'bg-white rounded-xl overflow-hidden shadow-md room-card transition duration-200 cursor-pointer hover:shadow-lg';
                 roomCard.innerHTML = `
                     <div class="relative">
-                        <img src="${room.PrimaryImage || 'https://via.placeholder.com/300x200?text=No+Image'}" 
+                                <img src="${room.PrimaryImage || 'data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"300\" height=\"200\"><rect width=\"100%\" height=\"100%\" fill=\"%23e5e7eb\"/><text x=\"50%\" y=\"50%\" dominant-baseline=\"middle\" text-anchor=\"middle\" fill=\"%236b7280\" font-family=\"Arial\" font-size=\"16\">No Image</text></svg>'}" 
                              alt="Room ${room.RoomNumber}" 
                              class="w-full h-48 object-cover"
                              onclick="viewRoomDetails(${room.RoomID})">
@@ -3033,7 +3040,7 @@ $section = $_GET['section'] ?? 'home';
                 roomItem.className = 'bg-white rounded-lg shadow-md p-4 mb-4 hover:shadow-lg transition duration-200 cursor-pointer';
                 roomItem.innerHTML = `
                     <div class="flex items-center space-x-4" onclick="viewRoomDetails(${room.RoomID})">
-                        <img src="${room.PrimaryImage || 'https://via.placeholder.com/150x100?text=No+Image'}" 
+                                <img src="${room.PrimaryImage || 'data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"150\" height=\"100\"><rect width=\"100%\" height=\"100%\" fill=\"%23e5e7eb\"/><text x=\"50%\" y=\"50%\" dominant-baseline=\"middle\" text-anchor=\"middle\" fill=\"%236b7280\" font-family=\"Arial\" font-size=\"12\">No Image</text></svg>'}" 
                              alt="Room ${room.RoomNumber}" 
                              class="w-24 h-16 object-cover rounded-lg">
                         <div class="flex-1">
@@ -3309,7 +3316,7 @@ $section = $_GET['section'] ?? 'home';
                 roomCard.className = 'bg-white rounded-xl overflow-hidden shadow-md room-card transition duration-200 cursor-pointer hover:shadow-lg';
                 roomCard.innerHTML = `
                     <div class="relative">
-                        <img src="${room.PrimaryImage || 'https://via.placeholder.com/300x200?text=No+Image'}" 
+                                <img src="${room.PrimaryImage || 'data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"300\" height=\"200\"><rect width=\"100%\" height=\"100%\" fill=\"%23e5e7eb\"/><text x=\"50%\" y=\"50%\" dominant-baseline=\"middle\" text-anchor=\"middle\" fill=\"%236b7280\" font-family=\"Arial\" font-size=\"16\">No Image</text></svg>'}" 
                              alt="Room ${room.RoomNumber}" 
                              class="w-full h-48 object-cover"
                              onclick="viewRoomDetails(${room.RoomID})">
@@ -3337,7 +3344,7 @@ $section = $_GET['section'] ?? 'home';
             });
         }
         // View room details for booking
-        // Trong file codeweb.php, tìm hàm viewRoomDetails và sửa thành:
+        // Trong file index.php, tìm hàm viewRoomDetails và sửa thành:
         function viewRoomDetails(roomId, checkInDate = null, checkOutDate = null) {
 
     // Lưu thông tin phòng và ngày đã chọn (nếu có)
@@ -3372,10 +3379,11 @@ $section = $_GET['section'] ?? 'home';
             }
             return response.json();
         })
-        .then(room => {
-            if (room.error) {
-                throw new Error(room.error);
+        .then(data => {
+            if (!data || data.success === false) {
+                throw new Error(data && data.message ? data.message : 'Failed to load room details');
             }
+            const room = data.room || data; // fallback nếu API trả trực tiếp
 
             // Set selectedRoom để có thể booking
             selectedRoom = {
@@ -3385,10 +3393,9 @@ $section = $_GET['section'] ?? 'home';
                 type: room.TypeName
             };
 
-
-            // Tạo lại toàn bộ HTML content cho room details container
-            const images = room.images && room.images.length > 0 ? room.images : [];
-            const defaultImage = 'https://via.placeholder.com/800x500?text=No+Image';
+            // Chuẩn hóa danh sách ảnh: API trả về mảng URL (Images)
+            const images = Array.isArray(room.Images) ? room.Images.map(url => ({ ImageURL: url })) : [];
+            const defaultImage = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500"><rect width="100%" height="100%" fill="%23e5e7eb"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%236b7280" font-family="Arial" font-size="24">No Image</text></svg>';
 
             roomDetailsContainer.innerHTML = `
                 <div class="flex justify-between items-start mb-4">
@@ -3403,7 +3410,7 @@ $section = $_GET['section'] ?? 'home';
                         ${images.length > 0 ? `
                             <div class="relative h-full group">
                                 <img src="${images[0].ImageURL}" alt="Room" class="w-full h-full object-cover transition-opacity duration-500" id="carousel-main-image" 
-                                     onload="this.style.opacity='1'" onerror="this.src='https://via.placeholder.com/800x500?text=Image+Not+Available'">
+                                     onload="this.style.opacity='1'" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"800\" height=\"500\"><rect width=\"100%\" height=\"100%\" fill=\"%23e5e7eb\"/><text x=\"50%\" y=\"50%\" dominant-baseline=\"middle\" text-anchor=\"middle\" fill=\"%236b7280\" font-family=\"Arial\" font-size=\"24\">Image Not Available</text></svg>'">
                                 
                                 <!-- Navigation arrows -->
                                 ${images.length > 1 ? `
@@ -3452,7 +3459,7 @@ $section = $_GET['section'] ?? 'home';
                 <div class="grid grid-cols-2 gap-4 mb-6">
                     <div class="bg-gray-50 p-3 rounded-lg">
                         <div class="text-gray-500 text-sm mb-1">Max Guests</div>
-                        <div class="font-semibold" id="book-room-guests">2</div>
+                        <div class="font-semibold" id="book-room-guests">${room.Capacity ?? '-'}</div>
                     </div>
                     <div class="bg-gray-50 p-3 rounded-lg">
                         <div class="text-gray-500 text-sm mb-1">Price Per Night</div>
@@ -3471,7 +3478,7 @@ $section = $_GET['section'] ?? 'home';
 
                 <div class="mb-6">
                     <h3 class="text-lg font-semibold mb-2">Description</h3>
-                    <p class="text-gray-600" id="book-room-description">${room.TypeDescription || 'No description available'}</p>
+                    <p class="text-gray-600" id="book-room-description">${room.Description || 'No description available'}</p>
                 </div>
 
                 <div class="bg-blue-50 p-4 rounded-lg">
@@ -3733,9 +3740,13 @@ $section = $_GET['section'] ?? 'home';
 
         // Calculate booking price
         function calculateBookingPrice() {
+            const nightsEl = document.getElementById('booking-nights');
+            const totalEl = document.getElementById('booking-total-price');
+            if (!nightsEl || !totalEl) return;
+
             if (!selectedDates.checkIn || !selectedDates.checkOut || !selectedRoom) {
-                document.getElementById('booking-nights').textContent = '-';
-                document.getElementById('booking-total-price').textContent = '$0';
+                nightsEl.textContent = '-';
+                totalEl.textContent = '$0';
                 return;
             }
 
@@ -3745,23 +3756,29 @@ $section = $_GET['section'] ?? 'home';
             
             if (nights > 0) {
                 const totalPrice = nights * selectedRoom.price;
-                document.getElementById('booking-nights').textContent = nights;
-                document.getElementById('booking-total-price').textContent = `$${totalPrice.toFixed(2)}`;
+                nightsEl.textContent = nights;
+                totalEl.textContent = `$${totalPrice.toFixed(2)}`;
             } else {
-                document.getElementById('booking-nights').textContent = '-';
-                document.getElementById('booking-total-price').textContent = '$0';
+                nightsEl.textContent = '-';
+                totalEl.textContent = '$0';
             }
 }
         // Update booking summary with dates and prices
         function updateBookingSummary() {
             if (!selectedRoom) return;
 
+            const checkInEl = document.getElementById('book-check-in');
+            const checkOutEl = document.getElementById('book-check-out');
+            const totalNightsEl = document.getElementById('book-total-nights');
+            const totalPriceEl = document.getElementById('book-total-price');
+            if (!checkInEl || !checkOutEl || !totalNightsEl || !totalPriceEl) return;
+
             if (selectedDates.checkIn) {
-                document.getElementById('book-check-in').textContent = formatDate(selectedDates.checkIn);
+                checkInEl.textContent = formatDate(selectedDates.checkIn);
             }
 
             if (selectedDates.checkOut) {
-                document.getElementById('book-check-out').textContent = formatDate(selectedDates.checkOut);
+                checkOutEl.textContent = formatDate(selectedDates.checkOut);
             }
 
             if (selectedDates.checkIn && selectedDates.checkOut) {
@@ -3770,8 +3787,8 @@ $section = $_GET['section'] ?? 'home';
                 const nights = Math.ceil((checkOut - checkIn) / (1000 * 60 * 60 * 24));
                 const totalPrice = nights * selectedRoom.price;
 
-                document.getElementById('book-total-nights').textContent = `${nights} night${nights !== 1 ? 's' : ''}`;
-                document.getElementById('book-total-price').textContent = `$${totalPrice}`;
+                totalNightsEl.textContent = `${nights} night${nights !== 1 ? 's' : ''}`;
+                totalPriceEl.textContent = `$${totalPrice}`;
             }
         }
 
@@ -4855,7 +4872,7 @@ $section = $_GET['section'] ?? 'home';
                 const email = document.getElementById('user-modal-email').value;
                 const password = document.getElementById('user-modal-password').value;
                 const role = document.getElementById('user-modal-role').value;
-                const status = document.getElementById('user-modal-status').value;
+                const status = (document.getElementById('user-modal-status')?.value) || 'active';
 
                 // Validate
                 if (!name || !email || (!id && !password)) {
@@ -4884,7 +4901,7 @@ $section = $_GET['section'] ?? 'home';
 
                 // Send request
                 fetch(isEdit ? 'admin_update_user.php' : 'admin_add_user.php', {
-                    method: isEdit ? 'PUT' : 'POST',
+                    method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
@@ -4969,7 +4986,7 @@ $section = $_GET['section'] ?? 'home';
             };
 
             const url = id ? 'admin_update_user.php' : 'admin_add_user.php';
-            const method = id ? 'PUT' : 'POST';
+            const method = 'POST';
 
             fetch(url, {
                 method: method,
@@ -5320,7 +5337,7 @@ $section = $_GET['section'] ?? 'home';
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     bookingID: bookingId,
-                    status: newStatus,
+                    action: newStatus,
                     adminUpdate: true
                 })
             })
