@@ -1,13 +1,11 @@
 <?php
-require_once 'cors_headers.php';
 require_once 'db.php';
 
 header('Content-Type: application/json');
 
 $input = json_decode(file_get_contents('php://input'), true);
 
-$method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
-if (!in_array($method, ['PUT', 'POST']) || !$input) {
+if ($_SERVER['REQUEST_METHOD'] !== 'PUT' || !$input) {
     echo json_encode(['success' => false, 'message' => 'Invalid request']);
     exit;
 }
@@ -30,7 +28,7 @@ if (empty($id) || empty($name) || empty($email)) {
 
 try {
     // Get role ID based on role name
-    $stmt = $pdo->prepare("SELECT RoleID FROM Role WHERE RoleName = ?");
+    $stmt = $pdo->prepare("SELECT RoleID FROM role WHERE RoleName = ?");
     $stmt->execute([$role]);
     $roleData = $stmt->fetch(PDO::FETCH_ASSOC);
     
@@ -42,7 +40,7 @@ try {
     $roleId = $roleData['RoleID'];
     
     // Check if email already exists for another user
-    $stmt = $pdo->prepare("SELECT * FROM Users WHERE Email = ? AND UserID != ?");
+    $stmt = $pdo->prepare("SELECT * FROM users WHERE Email = ? AND UserID != ?");
     $stmt->execute([$email, $id]);
     if ($stmt->rowCount() > 0) {
         echo json_encode(['success' => false, 'message' => 'Email already exists']);
@@ -53,7 +51,7 @@ try {
     $counter = 1;
     
     do {
-        $stmt = $pdo->prepare("SELECT * FROM Users WHERE Username = ? AND UserID != ?");
+        $stmt = $pdo->prepare("SELECT * FROM users WHERE Username = ? AND UserID != ?");
         $stmt->execute([$username, $id]);
         
         if ($stmt->rowCount() > 0) {
@@ -67,12 +65,12 @@ try {
     
     if (!empty($password)) {
         $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
-        $stmt = $pdo->prepare("UPDATE Users SET Username = ?, Password = ?, Email = ?, 
+        $stmt = $pdo->prepare("UPDATE users SET Username = ?, Password = ?, Email = ?, 
                               Fullname = ?, Role = ?, UpdatedAt = NOW() 
                               WHERE UserID = ?");
         $stmt->execute([$username, $hashedPassword, $email, $name, $roleId, $id]);
     } else {
-        $stmt = $pdo->prepare("UPDATE Users SET Username = ?, Email = ?, 
+        $stmt = $pdo->prepare("UPDATE users SET Username = ?, Email = ?, 
                               Fullname = ?, Role = ?, UpdatedAt = NOW() 
                               WHERE UserID = ?");
         $stmt->execute([$username, $email, $name, $roleId, $id]);

@@ -1,5 +1,4 @@
 <?php
-require_once 'cors_headers.php';
 require_once 'db.php';
 
 // Đảm bảo không có output nào trước header
@@ -94,7 +93,7 @@ try {
     
     // Insert images
     if (!empty($images)) {
-        $stmt = $pdo->prepare("INSERT INTO RoomImage (RoomID, ImageURL, Caption) VALUES (?, ?, ?)");
+        $stmt = $pdo->prepare("INSERT INTO roomimage (RoomID, ImageURL, Caption) VALUES (?, ?, ?)");
         foreach ($images as $image) {
             if (!empty($image['url'])) {
                 $stmt->execute([$roomID, $image['url'], $image['caption'] ?? '']);
@@ -138,7 +137,7 @@ try {
                 // Di chuyển file đã upload
                 if (move_uploaded_file($file['tmp_name'], $uploadPath)) {
                     // Lưu vào database
-                    $stmt = $pdo->prepare("INSERT INTO RoomImage (RoomID, ImageURL, Caption) VALUES (?, ?, ?)");
+                    $stmt = $pdo->prepare("INSERT INTO roomimage (RoomID, ImageURL, Caption) VALUES (?, ?, ?)");
                     $stmt->execute([$roomID, $uploadPath, '']);
                 }
             }

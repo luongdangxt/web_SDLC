@@ -1,6 +1,6 @@
 <?php
 $host = 'localhost';
-$dbname = 'sdlc';
+$dbname = 'asm-sdlc';
 $username = 'root';
 $password = '';
 
