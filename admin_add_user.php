@@ -1,5 +1,4 @@
 <?php
-require_once 'cors_headers.php';
 require_once 'db.php';
 
 header('Content-Type: application/json');
@@ -28,7 +27,7 @@ if (empty($name) || empty($email) || empty($password)) {
 
 // Get role ID based on role name
 try {
-    $stmt = $pdo->prepare("SELECT RoleID FROM Role WHERE RoleName = ?");
+    $stmt = $pdo->prepare("SELECT RoleID FROM role WHERE RoleName = ?");
     $stmt->execute([$role]);
     $roleData = $stmt->fetch(PDO::FETCH_ASSOC);
     
@@ -40,7 +39,7 @@ try {
     $roleId = $roleData['RoleID'];
     
     // Check if email already exists
-    $stmt = $pdo->prepare("SELECT * FROM Users WHERE Email = ?");
+    $stmt = $pdo->prepare("SELECT * FROM users WHERE Email = ?");
     $stmt->execute([$email]);
     if ($stmt->rowCount() > 0) {
         echo json_encode(['success' => false, 'message' => 'Email already exists']);
@@ -51,7 +50,7 @@ try {
     $counter = 1;
     
     do {
-        $stmt = $pdo->prepare("SELECT * FROM Users WHERE Username = ?");
+        $stmt = $pdo->prepare("SELECT * FROM users WHERE Username = ?");
         $stmt->execute([$username]);
         
         if ($stmt->rowCount() > 0) {
@@ -62,7 +61,7 @@ try {
         }
     } while ($counter < 100); // Prevent infinite loop
     // Insert new user
-    $stmt = $pdo->prepare("INSERT INTO Users (Username, Password, Email, Fullname, Role, CreatedAt) 
+    $stmt = $pdo->prepare("INSERT INTO users (Username, Password, Email, Fullname, Role, CreatedAt) 
                           VALUES (?, ?, ?, ?, ?, NOW())");
     $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
     

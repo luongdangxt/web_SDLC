@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Base64 Image Manager</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        .btn {
+            background: #ff6b35;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        
+        .btn:hover {
+            background: #e55a2b;
+        }
+        
+        .btn.success {
+            background: #28a745;
+        }
+        
+        .btn.info {
+            background: #17a2b8;
+        }
+        
+        .btn.warning {
+            background: #ffc107;
+            color: #212529;
+        }
+        
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .status.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .image-item {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            background: #f9f9f9;
+        }
+        
+        .image-item.base64 {
+            border-left: 4px solid #28a745;
+        }
+        
+        .image-item.file_path {
+            border-left: 4px solid #007bff;
+        }
+        
+        .image-item.unknown {
+            border-left: 4px solid #dc3545;
+        }
+        
+        .image-preview {
+            width: 100%;
+            max-height: 150px;
+            object-fit: cover;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        
+        .image-info {
+            font-size: 12px;
+            color: #666;
+            margin-top: 10px;
+        }
+        
+        .code {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🖼️ Base64 Image Manager</h1>
+        <p>Tool để quản lý và sửa lỗi ảnh base64 trong database</p>
+        
+        <!-- Section 1: Database Check -->
+        <div class="section">
+            <h3>📊 Kiểm tra Database</h3>
+            <button class="btn info" onclick="checkDatabase()">
+                🔍 Kiểm tra Database
+            </button>
+            <button class="btn warning" onclick="fixDatabase()">
+                🔧 Sửa Database (Thay đổi cấu trúc)
+            </button>
+            <div id="database-status"></div>
+            <div id="database-info"></div>
+        </div>
+        
+        <!-- Section 2: View Images -->
+        <div class="section">
+            <h3>🖼️ Xem Ảnh</h3>
+            <button class="btn success" onclick="viewImages()">
+                👁️ Xem tất cả ảnh
+            </button>
+            <button class="btn" onclick="viewInNewTab()">
+                🔗 Mở trong tab mới
+            </button>
+            <div id="images-container"></div>
+        </div>
+        
+        <!-- Section 3: Recommendations -->
+        <div class="section">
+            <h3>💡 Khuyến nghị</h3>
+            <div id="recommendations"></div>
+        </div>
+        
+        <!-- Section 4: SQL Commands -->
+        <div class="section">
+            <h3>📝 Lệnh SQL</h3>
+            <p>Chạy những lệnh này trong phpMyAdmin hoặc MySQL client:</p>
+            <div class="code">
+-- Thay đổi kiểu dữ liệu để hỗ trợ base64<br>
+ALTER TABLE roomimage MODIFY COLUMN ImageURL TEXT;<br>
+ALTER TABLE roomimage MODIFY COLUMN Caption TEXT;<br><br>
+
+-- Kiểm tra cấu trúc<br>
+DESCRIBE roomimage;<br><br>
+
+-- Xem dữ liệu<br>
+SELECT ImageID, RoomID, LEFT(ImageURL, 50) as preview, LENGTH(ImageURL) as length<br>
+FROM roomimage ORDER BY length DESC LIMIT 10;
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Check database structure and data
+        async function checkDatabase() {
+            const statusDiv = document.getElementById('database-status');
+            const infoDiv = document.getElementById('database-info');
+            
+            statusDiv.innerHTML = '<div class="status info">🔍 Đang kiểm tra database...</div>';
+            
+            try {
+                const response = await fetch('fix_base64_images.php?action=check');
+                const data = await response.json();
+                
+                if (data.success) {
+                    statusDiv.innerHTML = '<div class="status success">✅ Kiểm tra database thành công</div>';
+                    
+                    let infoHtml = '<h4>📊 Thông tin Database:</h4>';
+                    infoHtml += `<p><strong>Tổng số ảnh:</strong> ${data.total_images}</p>`;
+                    infoHtml += `<p><strong>Ảnh base64:</strong> ${data.image_types.base64_count}</p>`;
+                    infoHtml += `<p><strong>Ảnh file:</strong> ${data.image_types.file_count}</p>`;
+                    infoHtml += `<p><strong>Ảnh khác:</strong> ${data.image_types.other_count}</p>`;
+                    infoHtml += `<p><strong>Cấu trúc ImageURL:</strong> ${data.database_structure.Type}</p>`;
+                    
+                    if (data.recommendations.length > 0) {
+                        infoHtml += '<h4>⚠️ Khuyến nghị:</h4><ul>';
+                        data.recommendations.forEach(rec => {
+                            infoHtml += `<li>${rec}</li>`;
+                        });
+                        infoHtml += '</ul>';
+                    }
+                    
+                    infoDiv.innerHTML = infoHtml;
+                    updateRecommendations(data);
+                } else {
+                    statusDiv.innerHTML = `<div class="status error">❌ Lỗi: ${data.message}</div>`;
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="status error">❌ Lỗi kết nối: ${error.message}</div>`;
+            }
+        }
+        
+        // Fix database structure
+        async function fixDatabase() {
+            if (!confirm('Bạn có chắc chắn muốn thay đổi cấu trúc database? Hành động này không thể hoàn tác.')) {
+                return;
+            }
+            
+            const statusDiv = document.getElementById('database-status');
+            statusDiv.innerHTML = '<div class="status warning">🔧 Đang sửa database...</div>';
+            
+            try {
+                const response = await fetch('fix_base64_images.php?action=fix');
+                const data = await response.json();
+                
+                if (data.success) {
+                    statusDiv.innerHTML = '<div class="status success">✅ Sửa database thành công!</div>';
+                    setTimeout(() => {
+                        checkDatabase(); // Kiểm tra lại
+                    }, 1000);
+                } else {
+                    statusDiv.innerHTML = `<div class="status error">❌ Lỗi: ${data.message}</div>`;
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="status error">❌ Lỗi: ${error.message}</div>`;
+            }
+        }
+        
+        // View images
+        async function viewImages() {
+            const container = document.getElementById('images-container');
+            container.innerHTML = '<div class="status info">📸 Đang tải ảnh...</div>';
+            
+            try {
+                const response = await fetch('fix_base64_images.php?action=check');
+                const data = await response.json();
+                
+                if (data.success && data.sample_data) {
+                    let html = '<div class="image-grid">';
+                    
+                    data.sample_data.forEach(image => {
+                        html += `
+                            <div class="image-item ${image.type}">
+                                <h5>Image ID: ${image.ImageID} (Room: ${image.RoomID})</h5>
+                                <p><strong>Type:</strong> ${image.type}</p>
+                                <p><strong>Length:</strong> ${image.length} characters</p>
+                                <div class="image-info">
+                                    <strong>Preview:</strong> ${image.preview}...
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    html += '</div>';
+                    container.innerHTML = html;
+                } else {
+                    container.innerHTML = '<div class="status error">❌ Không thể tải ảnh</div>';
+                }
+            } catch (error) {
+                container.innerHTML = `<div class="status error">❌ Lỗi: ${error.message}</div>`;
+            }
+        }
+        
+        // View in new tab with images
+        function viewInNewTab() {
+            window.open('fix_base64_images.php?action=view', '_blank');
+        }
+        
+        // Update recommendations
+        function updateRecommendations(data) {
+            const recDiv = document.getElementById('recommendations');
+            
+            if (data.image_types.base64_count > 0) {
+                let recHtml = '<div class="status warning">';
+                recHtml += '<h4>🔧 Cần thực hiện:</h4>';
+                recHtml += '<ol>';
+                recHtml += '<li><strong>Thay đổi cấu trúc database:</strong> Chạy lệnh SQL bên dưới hoặc nhấn nút "Sửa Database"</li>';
+                recHtml += '<li><strong>Kiểm tra ảnh:</strong> Nhấn "Xem tất cả ảnh" để xem ảnh base64</li>';
+                recHtml += '<li><strong>Test hiển thị:</strong> Mở tab mới để xem ảnh có hiển thị đúng không</li>';
+                recHtml += '</ol>';
+                recHtml += '</div>';
+                recDiv.innerHTML = recHtml;
+            } else {
+                recDiv.innerHTML = '<div class="status success">✅ Database đã được cấu hình đúng!</div>';
+            }
+        }
+        
+        // Auto check on load
+        document.addEventListener('DOMContentLoaded', () => {
+            checkDatabase();
+        });
+    </script>
+</body>
+</html>

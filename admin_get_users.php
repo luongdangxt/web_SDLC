@@ -1,5 +1,4 @@
 <?php
-require_once 'cors_headers.php';
 require_once 'db.php';
 
 header('Content-Type: application/json');
@@ -7,7 +6,7 @@ header('Content-Type: application/json');
 try {
     $stmt = $pdo->prepare("SELECT u.UserID as id, u.Fullname as name, u.Email as email, 
                           r.RoleName as role
-                          FROM Users u JOIN Role r ON u.Role = r.RoleID");
+                          FROM users u JOIN role r ON u.Role = r.RoleID");
     $stmt->execute();
     $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
     

@@ -1,26 +1,13 @@
 <?php
 require_once 'db.php';
 
-// CORS headers
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
-header('Access-Control-Max-Age: 86400'); // 24 hours
-
-// Handle preflight OPTIONS request
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit;
-}
-
 // Bắt đầu output buffering để bắt mọi output không mong muốn
 ob_start();
 
 header('Content-Type: application/json');
 
 // Kiểm tra phương thức request
-$method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
-if (!in_array($method, ['PUT', 'POST'])) {
+if ($_SERVER['REQUEST_METHOD'] !== 'PUT') {
     http_response_code(405);
     echo json_encode(['success' => false, 'message' => 'Method not allowed']);
     exit;
@@ -122,12 +109,12 @@ try {
     $stmt->execute([$roomNumber, $roomTypeID, $price, $capacity, $status, $roomID]);
     
     // Handle images - first delete existing ones
-    $stmt = $pdo->prepare('DELETE FROM RoomImage WHERE RoomID = ?');
+    $stmt = $pdo->prepare('DELETE FROM roomimage WHERE RoomID = ?');
     $stmt->execute([$roomID]);
     
     // Insert new images
     if (!empty($images)) {
-        $stmt = $pdo->prepare('INSERT INTO RoomImage (RoomID, ImageURL, Caption) VALUES (?, ?, ?)');
+        $stmt = $pdo->prepare('INSERT INTO roomimage (RoomID, ImageURL, Caption) VALUES (?, ?, ?)');
         foreach ($images as $image) {
             if (!empty($image['url'])) {
                 $stmt->execute([$roomID, $image['url'], $image['caption'] ?? '']);
@@ -171,7 +158,7 @@ try {
                 // Di chuyển file đã upload
                 if (move_uploaded_file($file['tmp_name'], $uploadPath)) {
                     // Lưu vào database
-                    $stmt = $pdo->prepare("INSERT INTO RoomImage (RoomID, ImageURL, Caption) VALUES (?, ?, ?)");
+                    $stmt = $pdo->prepare("INSERT INTO roomimage (RoomID, ImageURL, Caption) VALUES (?, ?, ?)");
                     $stmt->execute([$roomID, $uploadPath, '']);
                 }
             }

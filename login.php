@@ -1,68 +1,57 @@
 <?php
-require_once 'cors_headers.php';
 require_once 'db.php';
-session_start();
 
 header('Content-Type: application/json');
 
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    echo json_encode(['success' => false, 'message' => 'Invalid request method']);
+$input = json_decode(file_get_contents('php://input'), true);
+
+if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !$input) {
+    echo json_encode(['success' => false, 'message' => 'Invalid request']);
     exit;
 }
 
-$data = json_decode(file_get_contents('php://input'), true);
+$email = $input['email'] ?? '';
+$password = $input['password'] ?? '';
 
-if (!$data || !isset($data['email']) || !isset($data['password'])) {
-    echo json_encode(['success' => false, 'message' => 'Email and password are required']);
+// Find user by email
+$stmt = $pdo->prepare("SELECT u.*, r.RoleName, r.Permissions 
+                       FROM users u 
+                       JOIN role r ON u.Role = r.RoleID 
+                       WHERE u.Email = ?");
+$stmt->execute([$email]);
+$user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$user || !password_verify($password, $user['Password'])) {
+    echo json_encode(['success' => false, 'message' => 'Invalid email or password']);
     exit;
 }
 
-$email = $data['email'];
-$password = $data['password'];
+// Start session and store user data
+session_start();
+$_SESSION['user'] = [
+    'id' => $user['UserID'],
+    'name' => $user['Fullname'],
+    'email' => $user['Email'],
+    'phone' => $user['Phonenumber'],
+    'avatar' => $user['Avatar'],
+    'role' => $user['RoleName'],
+    'permissions' => json_decode($user['Permissions'], true)
+];
 
-try {
-    // Check user credentials
-    $stmt = $pdo->prepare("
-        SELECT u.UserID, u.Username, u.Password, u.Email, u.Fullname, u.Role,
-               r.RoleName
-        FROM Users u
-        JOIN Role r ON u.Role = r.RoleID
-        WHERE u.Email = ?
-    ");
-    $stmt->execute([$email]);
-    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+// Update last login time
+$updateStmt = $pdo->prepare("UPDATE users SET UpdatedAt = NOW() WHERE UserID = ?");
+$updateStmt->execute([$user['UserID']]);
 
-    if (!$user || !password_verify($password, $user['Password'])) {
-        echo json_encode(['success' => false, 'message' => 'Invalid email or password']);
-        exit;
-    }
+// Prepare user data to return
+$userData = [
+    'id' => $user['UserID'],
+    'name' => $user['Fullname'],
+    'email' => $user['Email'],
+    'phone' => $user['Phonenumber'],
+    'avatar' => $user['Avatar'],
+    'role' => $user['RoleName'],
+    'permissions' => json_decode($user['Permissions'], true)
+];
 
-    // Set session data
-    $_SESSION['user'] = [
-        'id' => $user['UserID'],
-        'username' => $user['Username'],
-        'email' => $user['Email'],
-        'fullname' => $user['Fullname'],
-        'role' => $user['RoleName']
-    ];
-
-    // Update last login time
-    $updateStmt = $pdo->prepare("UPDATE Users SET UpdatedAt = NOW() WHERE UserID = ?");
-    $updateStmt->execute([$user['UserID']]);
-
-    echo json_encode([
-        'success' => true,
-        'message' => 'Login successful',
-        'user' => [
-            'id' => $user['UserID'],
-            'username' => $user['Username'],
-            'email' => $user['Email'],
-            'fullname' => $user['Fullname'],
-            'role' => $user['RoleName']
-        ]
-    ]);
-
-} catch (PDOException $e) {
-    echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
-}
+echo json_encode(['success' => true, 'user' => $userData]);
 ?>
