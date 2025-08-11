@@ -1,5 +1,4 @@
 <?php
-require_once 'cors_headers.php';
 require_once 'db.php';
 session_start();
 
@@ -36,10 +35,10 @@ try {
             r.Price as RoomPrice,
             rt.TypeName as RoomType,
             rt.Description as RoomTypeDescription
-        FROM Booking b
-        JOIN Users u ON b.UserID = u.UserID
-        JOIN Room r ON b.RoomID = r.RoomID
-        JOIN RoomType rt ON r.RoomTypeID = rt.RoomTypeID
+        FROM booking b
+        JOIN users u ON b.UserID = u.UserID
+        JOIN room r ON b.RoomID = r.RoomID
+        JOIN roomtype rt ON r.RoomTypeID = rt.RoomTypeID
         WHERE 1=1
     ";
 
